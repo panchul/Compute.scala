@@ -13,7 +13,7 @@ trait Memory[Element] {
   type Buffer
   def fromByteBuffer(byteBuffer: ByteBuffer): Buffer
   def numberOfBytesPerElement: Int
-  def address(buffer: Buffer): Memory.Address
+  def address(buffer: Buffer): Long
   def remaining(buffer: Buffer): Int
   def remainingBytes(buffer: Buffer): Int = numberOfBytesPerElement * remaining(buffer)
   def get(buffer: Buffer, index: Int): Element
@@ -28,11 +28,6 @@ object Memory extends LowPriorityMemory {
     type Buffer = Buffer0
   }
 
-  /**
-    * An integer that have the size of a pointer. The corresponding C type may be `void*`, `size_t`, `offset_t`.
-    */
-  final case class Address(toLong: Long) extends AnyVal
-
   trait NioMemory[Element] extends Memory[Element] {
     type Buffer <: java.nio.Buffer
 
@@ -44,10 +39,10 @@ object Memory extends LowPriorityMemory {
 
     override def remaining(buffer: Buffer): Int = buffer.remaining
 
-    override def address(buffer: Buffer): Address = Address(buffer.address)
+    override def address(buffer: Buffer): Long = (buffer.address)
   }
 
-  implicit object AddressMemory extends CustomMemory[Address] {
+  implicit object PointerMemory extends CustomMemory[Pointer] {
     override type Buffer = PointerBuffer
 
     override def numberOfBytesPerElement: Int = Pointer.POINTER_SIZE
@@ -56,9 +51,9 @@ object Memory extends LowPriorityMemory {
       PointerBuffer.create(byteBuffer)
     }
 
-    override def get(buffer: PointerBuffer, index: Int): Address = Address(buffer.get(index))
+    override def get(buffer: PointerBuffer, index: Int): Pointer = new Pointer.Default(buffer.get(index)) {}
 
-    override def put(buffer: PointerBuffer, index: Int, value: Address): Unit = buffer.put(index, value.toLong)
+    override def put(buffer: PointerBuffer, index: Int, value: Pointer): Unit = buffer.put(index, value)
 
   }
 
@@ -69,7 +64,7 @@ object Memory extends LowPriorityMemory {
 
     override def numberOfBytesPerElement: Int = 0
 
-    override def address(buffer: ByteBuffer): Address = Address(MemoryUtil.memAddress(buffer))
+    override def address(buffer: ByteBuffer): Long = (MemoryUtil.memAddress(buffer))
 
     override def get(buffer: ByteBuffer, index: Int): HNil = HNil
 
@@ -83,7 +78,7 @@ object Memory extends LowPriorityMemory {
 
     override def numberOfBytesPerElement: Int = java.lang.Integer.BYTES
 
-    override def address(buffer: IntBuffer): Address = Address(MemoryUtil.memAddress(buffer))
+    override def address(buffer: IntBuffer): Long = (MemoryUtil.memAddress(buffer))
 
     override def get(buffer: IntBuffer, index: Int): Int = buffer.get(index)
 
@@ -97,7 +92,7 @@ object Memory extends LowPriorityMemory {
 
     override def numberOfBytesPerElement: Int = java.lang.Long.BYTES
 
-    override def address(buffer: LongBuffer): Address = Address(MemoryUtil.memAddress(buffer))
+    override def address(buffer: LongBuffer): Long = (MemoryUtil.memAddress(buffer))
 
     override def get(buffer: LongBuffer, index: Int): Long = buffer.get(index)
 
@@ -111,7 +106,7 @@ object Memory extends LowPriorityMemory {
 
     override def numberOfBytesPerElement: Int = java.lang.Double.BYTES
 
-    override def address(buffer: DoubleBuffer): Address = Address(MemoryUtil.memAddress(buffer))
+    override def address(buffer: DoubleBuffer): Long = (MemoryUtil.memAddress(buffer))
 
     override def get(buffer: DoubleBuffer, index: Int): Double = buffer.get(index)
 
@@ -125,7 +120,7 @@ object Memory extends LowPriorityMemory {
 
     override def numberOfBytesPerElement: Int = java.lang.Float.BYTES
 
-    override def address(buffer: FloatBuffer): Address = Address(MemoryUtil.memAddress(buffer))
+    override def address(buffer: FloatBuffer): Long = (MemoryUtil.memAddress(buffer))
 
     override def get(buffer: FloatBuffer, index: Int): Float = buffer.get(index)
 
@@ -139,7 +134,7 @@ object Memory extends LowPriorityMemory {
 
     override def numberOfBytesPerElement: Int = java.lang.Byte.BYTES
 
-    override def address(buffer: ByteBuffer): Address = Address(MemoryUtil.memAddress(buffer))
+    override def address(buffer: ByteBuffer): Long = (MemoryUtil.memAddress(buffer))
 
     override def get(buffer: ByteBuffer, index: Int): Byte = buffer.get(index)
 
@@ -154,7 +149,7 @@ object Memory extends LowPriorityMemory {
 
     override def numberOfBytesPerElement: Int = java.lang.Short.BYTES
 
-    override def address(buffer: ShortBuffer): Address = Address(MemoryUtil.memAddress(buffer))
+    override def address(buffer: ShortBuffer): Long = (MemoryUtil.memAddress(buffer))
 
     override def get(buffer: ShortBuffer, index: Int): Short = buffer.get(index)
 
@@ -197,7 +192,7 @@ object Memory extends LowPriorityMemory {
       rawMemory.put(buffer, index, box.unbox(value))
     }
 
-    override def address(buffer: Buffer): Memory.Address = {
+    override def address(buffer: Buffer): Long = {
       rawMemory.address(buffer)
     }
   }
