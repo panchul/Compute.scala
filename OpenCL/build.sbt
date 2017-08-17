@@ -14,8 +14,22 @@ libraryDependencies += "org.lwjgl" % "lwjgl-opencl" % "3.1.2"
 
 libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.2"
 
-libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.2" % Runtime classifier lwjglNatives
+libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.2" % Test classifier lwjglNatives
 
-libraryDependencies += "com.thoughtworks.future" %% "future" % "1.0.1"
+libraryDependencies += "com.thoughtworks.raii" %% "asynchronous" % "3.0.0-M0"
+
+libraryDependencies += "com.thoughtworks.feature" %% "partialapply" % "2.0.1"
+
+libraryDependencies += "com.thoughtworks.feature" %% "implicitapply" % "2.0.1"
+
+libraryDependencies += "com.thoughtworks.feature" %% "factory" % "2.0.1"
+
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.3" % Test
 
 fork := true
+
+scalacOptions += "-Ypartial-unification"
+
+libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1" % Test
+
+enablePlugins(Example)
