@@ -2,6 +2,7 @@ package com.thoughtworks.compute
 
 import java.io.Closeable
 import java.nio.{ByteBuffer, IntBuffer}
+import java.util.concurrent.atomic.AtomicReference
 
 import org.lwjgl.opencl._
 import CL10._
@@ -17,6 +18,7 @@ import org.lwjgl.system.Pointer._
 
 import scala.collection.mutable
 import com.thoughtworks.compute.Memory.Box
+import com.thoughtworks.compute.OpenCL.checkErrorCode
 import org.lwjgl.system.jni.JNINativeInterface
 import org.lwjgl.system._
 
@@ -25,17 +27,45 @@ import scala.util.control.{NonFatal, TailCalls}
 import scala.util.control.TailCalls.TailRec
 import scala.util.{Failure, Success, Try}
 import scalaz.{-\/, \/, \/-}
+import scalaz.syntax.all._
 import com.thoughtworks.continuation._
+import com.thoughtworks.feature.mixins.ImplicitsSingleton
 import com.thoughtworks.future._
 import com.thoughtworks.raii.asynchronous.Do
-import com.thoughtworks.raii.covariant.{Releasable, ResourceT}
+import com.thoughtworks.raii.covariant.{MonadicCloseable, Releasable, ResourceT}
 import com.thoughtworks.tryt.covariant.TryT
+import shapeless.Witness
+
+import scala.language.higherKinds
 
 /**
   * @author 杨博 (Yang Bo)
   */
 object OpenCL {
 
+  @volatile
+  var defaultLogger: (String, ByteBuffer) => Unit = { (errorInfo: String, data: ByteBuffer) =>
+    // TODO: Add a test for in the case that Context is closed
+    Console.err.println(raw"""An OpenCL notify comes out after its corresponding handler is freed
+  message: $errorInfo
+  data: $data""")
+  }
+  private val contextCallback: CLContextCallback = CLContextCallback.create(new CLContextCallbackI {
+    override def invoke(errInfo: Long, privateInfo: Long, size: Long, userData: Long): Unit = {
+      val errorInfo = memASCII(errInfo)
+      val data = memByteBuffer(privateInfo, size.toInt)
+      memGlobalRefToObject[OpenCL](userData) match {
+        case null =>
+          defaultLogger(memASCII(errInfo), memByteBuffer(privateInfo, size.toInt))
+        case opencl =>
+          if (size.isValidInt) {
+            opencl.handleOpenCLNotification(memASCII(errInfo), memByteBuffer(privateInfo, size.toInt))
+          } else {
+            throw new IllegalArgumentException(s"numberOfBytes($size) is too large")
+          }
+      }
+    }
+  })
   object Exceptions {
 
     final class PlatformNotFoundKhr extends IllegalStateException
@@ -181,29 +211,138 @@ object OpenCL {
 
   }
 
-  private def checkErrorCode(errorCode: Int): Unit = {
+    def checkErrorCode(errorCode: Int): Unit = {
     errorCode match {
       case CL_SUCCESS =>
       case _          => throw Exceptions.fromErrorCode(errorCode)
     }
   }
-}
 
-trait OpenCL {
-  /** `intptr_t` */
-  protected type IntPtr
-
-  /** cl_platform_id */
-  type PlatformId <: IntPtr
-
-  /** cl_device_id */
-  type DeviceId <: IntPtr
-
-  final case class Platform(platformId: PlatformId) {
-    @transient lazy val capabilities: CLCapabilities = ???
+  trait UseFirstPlatform {
+    @transient @volatile
+    protected lazy val platformId: Long = {
+      val stack = stackPush()
+      try {
+        val platformIdBuffer = stack.mallocPointer(1)
+        checkErrorCode(clGetPlatformIDs(platformIdBuffer, null: IntBuffer))
+        platformIdBuffer.get(0)
+      } finally {
+        stack.close()
+      }
+    }
   }
 
-  def platforms: Seq[Platform]
+  private def deviceIdsByType(platformId: Long, deviceType: Int): Seq[Long] = {
+    val Array(numberOfDevices) = {
+      val a = Array(0)
+      checkErrorCode(clGetDeviceIDs(platformId, deviceType, null, a))
+      a
+    }
+    val stack = stackPush()
+    try {
+      val deviceIds = stack.mallocPointer(numberOfDevices)
+      checkErrorCode(clGetDeviceIDs(platformId, deviceType, deviceIds, null: IntBuffer))
+      for (i <- 0 until deviceIds.capacity()) yield {
+        val deviceId = deviceIds.get(i)
+        deviceId
+      }
+    } finally {
+      stack.close()
+    }
+  }
+
+  trait UseAllDevices {
+
+    protected val platformId: Long
+
+    @transient @volatile
+    protected lazy val deviceIds: Seq[Long] = {
+      deviceIdsByType(platformId, CL_DEVICE_TYPE_ALL)
+    }
+
+  }
+
+  object CommandQueuePool {
+    sealed trait State
+  }
+
+  trait CommandQueuePool {
+    // TODO: write buffer
+    // TODO: read buffer
+
+    // TODO: enqueue kernel
+    // TODO: TDD
+    protected def commandQueue: Do[Long] = {
+      ???
+    }
+
+    protected val context: Long
+
+    private val state: AtomicReference[CommandQueuePool.State] = ???
+
+    protected val numberOfCommandQueues: Int
+
+  }
+
+  final case class DeviceBuffer[Owner <: Singleton, Element](clMem: Long) extends AnyVal {
+    def slice(offset: Int, size: Int)(implicit witness: Witness.Aux[Owner],
+                                      memory: Memory[Element]): Do[DeviceBuffer[Owner, Element]] = {
+      ???
+    }
+    def read(implicit witness: Witness.Aux[Owner], memory: Memory[Element]): Do[memory.HostBuffer] = {
+      ???
+    }
+  }
+
+}
+
+trait OpenCL extends MonadicCloseable[UnitContinuation] with ImplicitsSingleton {
+
+  def monadicClose: UnitContinuation[Unit] = UnitContinuation.delay {
+    checkErrorCode(clReleaseContext(context))
+  }
+
+  protected def handleOpenCLNotification(errorInfo: String, privateInfo: ByteBuffer): Unit
+
+  import OpenCL._
+
+  protected val platformId: Long
+  protected val deviceIds: Seq[Long]
+
+  @transient @volatile
+  protected lazy val context: Long = {
+    val stack = stackPush()
+    try {
+      val errorCodeBuffer = stack.ints(CL_SUCCESS)
+      val contextProperties = stack.pointers(CL_CONTEXT_PLATFORM, platformId, 0)
+      val deviceIdBuffer = stack.pointers(deviceIds: _*)
+      val context =
+        clCreateContext(contextProperties,
+                        deviceIdBuffer,
+                        OpenCL.contextCallback,
+                        JNINativeInterface.NewWeakGlobalRef(this),
+                        errorCodeBuffer)
+      checkErrorCode(errorCodeBuffer.get(0))
+      context
+    } finally {
+      stack.close()
+    }
+  }
+  trait ImplicitsApi {}
+  type Implicits <: ImplicitsApi
+
+  val implicits: Implicits
+
+  type DeviceBuffer[Element] = OpenCL.DeviceBuffer[this.type, Element]
+
+  /** Returns an uninitialized buffer of `Element` on device.
+    */
+  def allocateBuffer[Element: Memory](size: Long): Do[DeviceBuffer[Element]] = ???
+
+  /** Returns a buffer of `Element` on device whose content is copied from `hostBuffer`.
+    */
+  def allocateBufferFrom[Element, HostBuffer](hostBuffer: HostBuffer)(
+      implicit memory: Memory.Aux[Element, HostBuffer]): Do[DeviceBuffer[Element]] = ???
 
 }
 //  {
@@ -287,30 +426,7 @@ trait OpenCL {
 //    contextCallback.close()
 //  }
 //
-//  @volatile
-//  var defaultLogger: (String, ByteBuffer) => Unit = { (errorInfo: String, data: ByteBuffer) =>
-//    // TODO: Add a test for in the case that Context is closed
-//    Console.err.println(raw"""An OpenCL notify comes out after its corresponding handler is freed
-//message: $errorInfo
-//data: $data""")
-//  }
 //
-//  private val contextCallback: CLContextCallback = CLContextCallback.create(new CLContextCallbackI {
-//    override def invoke(errInfo: Long, privateInfo: Long, size: Long, userData: Long): Unit = {
-//      val errorInfo = memASCII(errInfo)
-//      val data = memByteBuffer(privateInfo, size.toInt)
-//      memGlobalRefToObject[(String, ByteBuffer) => Unit](userData) match {
-//        case null =>
-//          defaultLogger(memASCII(errInfo), memByteBuffer(privateInfo, size.toInt))
-//        case logger =>
-//          if (size.isValidInt) {
-//            logger(memASCII(errInfo), memByteBuffer(privateInfo, size.toInt))
-//          } else {
-//            throw new IllegalArgumentException(s"numberOfBytes($size) is too large")
-//          }
-//      }
-//    }
-//  })
 //
 //  final class Platform private[OpenCL] (id: Long, capabilities: CLCapabilities) {
 //
