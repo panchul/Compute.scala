@@ -265,57 +265,97 @@ object OpenCL {
     sealed trait State
   }
 
-  trait CommandQueuePool {
+  trait CommandQueuePool extends OpenCL {
     // TODO: write buffer
     // TODO: read buffer
 
     // TODO: enqueue kernel
     // TODO: TDD
-    protected def commandQueue: Do[Long] = {
+    def commandQueue: Do[CommandQueue] = {
       ???
     }
-
-    protected val context: Long
 
     private val state: AtomicReference[CommandQueuePool.State] = ???
 
     protected val numberOfCommandQueues: Int
 
   }
+  private[OpenCL] object Event {
+    private[OpenCL] def delay[Owner <: OpenCL with Singleton](handle: => Long): Do[Event[Owner]] = {
+      val bufferContinuation = UnitContinuation.delay {
+        Resource(value = Success(Event[Owner](handle)), release = UnitContinuation.delay {
+          checkErrorCode(clReleaseMemObject(handle))
+        })
+      }
+      Do(TryT(ResourceT(bufferContinuation)))
+    }
+  }
+
+  private[OpenCL] final case class Event[Owner <: Singleton with OpenCL](handle: Long) extends AnyVal {
+
+    def waitFor(callbackType: Int): Future[Unit] = Future.async { continue: (Try[Unit] => Unit) =>
+      val callback = new (() => CLEventCallback) with CLEventCallbackI {
+        private val container = CLEventCallback.create(this)
+        final def invoke(event: Long, status: Int, userData: Long): Unit = {
+          container.close()
+          status match {
+            case `callbackType`             => continue(Success(()))
+            case errorCode if errorCode < 0 => continue(Failure(Exceptions.fromErrorCode(errorCode)))
+            case _                          => throw new IllegalStateException()
+          }
+        }
+        final def apply(): CLEventCallback = container
+      }
+      checkErrorCode(
+        clSetEventCallback(
+          handle,
+          callbackType,
+          callback(),
+          NULL
+        )
+      )
+    }
+
+    def waitForComplete(): Future[Unit] = waitFor(CL_COMPLETE)
+
+  }
+
+  object DeviceBuffer {
+    private[OpenCL] def delay[Owner <: Singleton with OpenCL, Element](
+        handle: => Long): Do[DeviceBuffer[Owner, Element]] = {
+      val bufferContinuation = UnitContinuation.delay {
+        Resource(value = Success(DeviceBuffer[Owner, Element](handle)), release = UnitContinuation.delay {
+          checkErrorCode(clReleaseMemObject(handle))
+        })
+      }
+      Do(TryT(ResourceT(bufferContinuation)))
+    }
+  }
 
   /** A [[https://www.khronos.org/registry/OpenCL/sdk/2.1/docs/man/xhtml/abstractDataTypes.html cl_mem]]
     * whose [[org.lwjgl.opencl.CL10.CL_MEM_TYPE CL_MEM_TYPE]] is buffer [[org.lwjgl.opencl.CL10.CL_MEM_OBJECT_BUFFER CL_MEM_OBJECT_BUFFER]].
     * @param handle The underlying `cl_mem`.
     */
-  final case class DeviceBuffer[Owner <: Singleton, Element](handle: Long) extends AnyVal {
+  final case class DeviceBuffer[Owner <: OpenCL with Singleton, Element](handle: Long) extends AnyVal { deviceBuffer =>
     def slice(offset: Int, size: Int)(implicit
                                       memory: Memory[Element]): Do[DeviceBuffer[Owner, Element]] = {
-
-      val bufferContinuation: UnitContinuation[Resource[UnitContinuation, Success[DeviceBuffer[Owner, Element]]]] =
-        UnitContinuation.delay {
-          val newHandle = {
-            val stack = stackPush()
-            try {
-              val errorCode = stack.ints(0)
-              val region = CLBufferRegion.mallocStack(stack)
-              region.set(offset.toLong * memory.numberOfBytesPerElement, size.toLong * memory.numberOfBytesPerElement)
-              val newHandle = nclCreateSubBuffer(handle,
-                                                 CL_MEM_READ_WRITE,
-                                                 CL_BUFFER_CREATE_TYPE_REGION,
-                                                 region.address(),
-                                                 memAddress(errorCode))
-              checkErrorCode(errorCode.get(0))
-              newHandle
-            } finally {
-              stack.close()
-            }
-          }
-          Resource(value = Success(DeviceBuffer[Owner, Element](newHandle)), release = UnitContinuation.delay {
-            checkErrorCode(clReleaseMemObject(newHandle))
-          })
+      DeviceBuffer.delay {
+        val stack = stackPush()
+        try {
+          val errorCode = stack.ints(0)
+          val region = CLBufferRegion.mallocStack(stack)
+          region.set(offset.toLong * memory.numberOfBytesPerElement, size.toLong * memory.numberOfBytesPerElement)
+          val newHandle = nclCreateSubBuffer(handle,
+                                             CL_MEM_READ_WRITE,
+                                             CL_BUFFER_CREATE_TYPE_REGION,
+                                             region.address(),
+                                             memAddress(errorCode))
+          checkErrorCode(errorCode.get(0))
+          newHandle
+        } finally {
+          stack.close()
         }
-      Do(TryT(ResourceT(bufferContinuation)))
-
+      }
     }
 
     def numberOfBytes: Int = {
@@ -331,25 +371,71 @@ object OpenCL {
 
     def length(implicit memory: Memory[Element]): Int = numberOfBytes / memory.numberOfBytesPerElement
 
-    def read[HostBuffer](hostBuffer: HostBuffer)(implicit witnessOwner: Witness.Aux[Owner],
-                                                 memory: Memory.Aux[Element, HostBuffer]) = {
-      ???
+    private def enqueueReadBuffer[Destination](hostBuffer: Destination, preconditionEvents: Event[Owner]*)(
+        implicit
+        witnessOwner: Witness.Aux[Owner],
+        memory: Memory.Aux[Element, Destination]): Do[Event[Owner]] = {
+
+      witnessOwner.value.commandQueue.flatMap { commandQueue =>
+        Event.delay[Owner] {
+          val outputEvent = {
+            val stack = stackPush()
+            try {
+              val (inputEventBufferSize, inputEventBufferAddress) = if (preconditionEvents.isEmpty) {
+                (0, NULL)
+              } else {
+                val inputEventBuffer = stack.pointers(preconditionEvents.view.map(_.handle.toLong): _*)
+                (preconditionEvents.length, inputEventBuffer.address())
+              }
+              val outputEventBuffer = stack.pointers(0L)
+              checkErrorCode(
+                nclEnqueueReadBuffer(
+                  commandQueue.handle,
+                  deviceBuffer.handle,
+                  CL_FALSE,
+                  0,
+                  memory.remainingBytes(hostBuffer),
+                  memory.address(hostBuffer).toLong,
+                  inputEventBufferSize,
+                  inputEventBufferAddress,
+                  outputEventBuffer.address()
+                )
+              )
+              outputEventBuffer.get(0)
+            } finally {
+              stack.close()
+            }
+          }
+          checkErrorCode(clFlush(handle.toLong))
+          outputEvent
+        }
+      }
     }
 
-    def toHostBuffer(implicit witnessOwner: Witness.Aux[Owner], memory: Memory[Element]): Do[memory.HostBuffer] = {
+    final def toHostBuffer(implicit witnessOwner: Witness.Aux[Owner],
+                           memory: Memory[Element]): Do[memory.HostBuffer] = {
       Do(TryT(ResourceT(UnitContinuation.delay {
         val hostBuffer = memory.allocate(length)
         Resource(value = Success(hostBuffer), release = UnitContinuation.delay { memory.free(hostBuffer) })
-      }))).map { hostBuffer =>
-        ???
-        hostBuffer
+      }))).flatMap { hostBuffer =>
+        enqueueReadBuffer[memory.HostBuffer](hostBuffer)(witnessOwner, memory)
+          .flatMap { event =>
+            Do.garbageCollected(event.waitForComplete())
+          }
+          .intransitiveMap { _: Unit =>
+            hostBuffer
+          }
       }
     }
   }
 
+  final case class CommandQueue[Owner <: OpenCL with Singleton](handle: Long) extends AnyVal
+
 }
 
 trait OpenCL extends MonadicCloseable[UnitContinuation] with ImplicitsSingleton {
+
+  def commandQueue: Do[CommandQueue]
 
   def monadicClose: UnitContinuation[Unit] = UnitContinuation.delay {
     checkErrorCode(clReleaseContext(context))
@@ -387,6 +473,7 @@ trait OpenCL extends MonadicCloseable[UnitContinuation] with ImplicitsSingleton 
   val implicits: Implicits
 
   type DeviceBuffer[Element] = OpenCL.DeviceBuffer[this.type, Element]
+  type CommandQueue = OpenCL.CommandQueue[this.type]
 
   /** Returns an uninitialized buffer of `Element` on device.
     */
