@@ -16,12 +16,12 @@ import com.thoughtworks.future._
   */
 final class OpenCLSpec extends AsyncFreeSpec with Matchers {
 
-  "xxx" in {
-    val openCL: Bit64Pointers with OpenCL10 = Factory[Bit64Pointers with OpenCL10].newInstance()
-    println(openCL.platforms)
-
-    1 should be(1)
-  }
+//  "xxx" in {
+//    val openCL: Bit64Pointers with OpenCL10 = Factory[Bit64Pointers with OpenCL10].newInstance()
+//    println(openCL.platforms)
+//
+//    1 should be(1)
+//  }
 //
 //  "test" in monadic[Do] {
 //    val platform = OpenCL.platforms.head

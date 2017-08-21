@@ -10,7 +10,6 @@ import CL12._
 import CL11._
 import CL20._
 import KHRICD._
-import com.thoughtworks.compute.Closeables.{AssertionAutoCloseable, AssertionFinalizer}
 import org.lwjgl.{BufferUtils, PointerBuffer}
 import org.lwjgl.system.MemoryUtil._
 import org.lwjgl.system.MemoryStack._
@@ -31,9 +30,9 @@ import scalaz.syntax.all._
 import com.thoughtworks.continuation._
 import com.thoughtworks.feature.mixins.ImplicitsSingleton
 import com.thoughtworks.future._
-import com.thoughtworks.raii.asynchronous.Do
-import com.thoughtworks.raii.covariant.{MonadicCloseable, Releasable, ResourceT}
-import com.thoughtworks.tryt.covariant.TryT
+import com.thoughtworks.raii.asynchronous._
+import com.thoughtworks.raii.covariant._
+import com.thoughtworks.tryt.covariant._
 import shapeless.Witness
 
 import scala.language.higherKinds
@@ -211,7 +210,7 @@ object OpenCL {
 
   }
 
-    def checkErrorCode(errorCode: Int): Unit = {
+  def checkErrorCode(errorCode: Int): Unit = {
     errorCode match {
       case CL_SUCCESS =>
       case _          => throw Exceptions.fromErrorCode(errorCode)
@@ -284,13 +283,67 @@ object OpenCL {
 
   }
 
-  final case class DeviceBuffer[Owner <: Singleton, Element](clMem: Long) extends AnyVal {
-    def slice(offset: Int, size: Int)(implicit witness: Witness.Aux[Owner],
+  /** A [[https://www.khronos.org/registry/OpenCL/sdk/2.1/docs/man/xhtml/abstractDataTypes.html cl_mem]]
+    * whose [[org.lwjgl.opencl.CL10.CL_MEM_TYPE CL_MEM_TYPE]] is buffer [[org.lwjgl.opencl.CL10.CL_MEM_OBJECT_BUFFER CL_MEM_OBJECT_BUFFER]].
+    * @param handle The underlying `cl_mem`.
+    */
+  final case class DeviceBuffer[Owner <: Singleton, Element](handle: Long) extends AnyVal {
+    def slice(offset: Int, size: Int)(implicit
                                       memory: Memory[Element]): Do[DeviceBuffer[Owner, Element]] = {
+
+      val bufferContinuation: UnitContinuation[Resource[UnitContinuation, Success[DeviceBuffer[Owner, Element]]]] =
+        UnitContinuation.delay {
+          val newHandle = {
+            val stack = stackPush()
+            try {
+              val errorCode = stack.ints(0)
+              val region = CLBufferRegion.mallocStack(stack)
+              region.set(offset.toLong * memory.numberOfBytesPerElement, size.toLong * memory.numberOfBytesPerElement)
+              val newHandle = nclCreateSubBuffer(handle,
+                                                 CL_MEM_READ_WRITE,
+                                                 CL_BUFFER_CREATE_TYPE_REGION,
+                                                 region.address(),
+                                                 memAddress(errorCode))
+              checkErrorCode(errorCode.get(0))
+              newHandle
+            } finally {
+              stack.close()
+            }
+          }
+          Resource(value = Success(DeviceBuffer[Owner, Element](newHandle)), release = UnitContinuation.delay {
+            checkErrorCode(clReleaseMemObject(newHandle))
+          })
+        }
+      Do(TryT(ResourceT(bufferContinuation)))
+
+    }
+
+    def numberOfBytes: Int = {
+      val sizeBuffer: Array[Long] = Array(0L)
+      checkErrorCode(clGetMemObjectInfo(handle, CL_MEM_SIZE, sizeBuffer, null))
+      val Array(value) = sizeBuffer
+      if (value.isValidInt) {
+        value.toInt
+      } else {
+        throw new IllegalStateException(s"Buffer's numberOfBytes($value) is too large")
+      }
+    }
+
+    def length(implicit memory: Memory[Element]): Int = numberOfBytes / memory.numberOfBytesPerElement
+
+    def read[HostBuffer](hostBuffer: HostBuffer)(implicit witnessOwner: Witness.Aux[Owner],
+                                                 memory: Memory.Aux[Element, HostBuffer]) = {
       ???
     }
-    def read(implicit witness: Witness.Aux[Owner], memory: Memory[Element]): Do[memory.HostBuffer] = {
-      ???
+
+    def toHostBuffer(implicit witnessOwner: Witness.Aux[Owner], memory: Memory[Element]): Do[memory.HostBuffer] = {
+      Do(TryT(ResourceT(UnitContinuation.delay {
+        val hostBuffer = memory.allocate(length)
+        Resource(value = Success(hostBuffer), release = UnitContinuation.delay { memory.free(hostBuffer) })
+      }))).map { hostBuffer =>
+        ???
+        hostBuffer
+      }
     }
   }
 
