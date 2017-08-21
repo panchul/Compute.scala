@@ -477,12 +477,39 @@ trait OpenCL extends MonadicCloseable[UnitContinuation] with ImplicitsSingleton 
 
   /** Returns an uninitialized buffer of `Element` on device.
     */
-  def allocateBuffer[Element: Memory](size: Long): Do[DeviceBuffer[Element]] = ???
+  def allocateBuffer[Element](size: Long)(implicit memory: Memory[Element]): Do[DeviceBuffer[Element]] =
+    DeviceBuffer.delay[this.type, Element] {
+      val stack = stackPush()
+      try {
+        val errorCodeBuffer = stack.ints(CL_SUCCESS)
+        val buffer =
+          clCreateBuffer(context, CL_MEM_READ_WRITE, memory.numberOfBytesPerElement * size, errorCodeBuffer)
+        checkErrorCode(errorCodeBuffer.get(0))
+        buffer
+      } finally {
+        stack.pop()
+      }
+    }
 
   /** Returns a buffer of `Element` on device whose content is copied from `hostBuffer`.
     */
   def allocateBufferFrom[Element, HostBuffer](hostBuffer: HostBuffer)(
-      implicit memory: Memory.Aux[Element, HostBuffer]): Do[DeviceBuffer[Element]] = ???
+      implicit memory: Memory.Aux[Element, HostBuffer]): Do[DeviceBuffer[Element]] =
+    DeviceBuffer.delay[this.type, Element] {
+      val stack = stackPush()
+      try {
+        val errorCodeBuffer = stack.ints(CL_SUCCESS)
+        val buffer = nclCreateBuffer(context,
+                                     CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE,
+                                     memory.remainingBytes(hostBuffer),
+                                     memory.address(hostBuffer).toLong,
+                                     memAddress(errorCodeBuffer))
+        checkErrorCode(errorCodeBuffer.get(0))
+        buffer
+      } finally {
+        stack.pop()
+      }
+    }
 
 }
 //  {
