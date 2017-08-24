@@ -29,6 +29,8 @@ import scala.util.{Failure, Success, Try}
 import scalaz.{-\/, Memo, \/, \/-}
 import scalaz.syntax.all._
 import com.thoughtworks.continuation._
+import com.thoughtworks.feature.Factory
+import com.thoughtworks.feature.Factory.inject
 import com.thoughtworks.feature.mixins.ImplicitsSingleton
 import com.thoughtworks.future._
 import com.thoughtworks.raii.AsynchronousPool
@@ -36,6 +38,7 @@ import com.thoughtworks.raii.asynchronous._
 import com.thoughtworks.raii.covariant._
 import com.thoughtworks.tryt.covariant._
 import shapeless.Witness
+import simulacrum.typeclass
 
 import scala.language.higherKinds
 
@@ -369,6 +372,17 @@ object OpenCL {
       }
       Do(TryT(ResourceT(bufferContinuation)))
     }
+
+    implicit def bufferBox[Owner <: Singleton with OpenCL, Element]: Box.Aux[DeviceBuffer[Owner, Element], Pointer] =
+      new Box[DeviceBuffer[Owner, Element]] {
+        override type Raw = Pointer
+
+        override def box(raw: Raw): DeviceBuffer[Owner, Element] =
+          new DeviceBuffer[Owner, Element](raw.address())
+
+        override def unbox(boxed: DeviceBuffer[Owner, Element]): Raw = new Pointer.Default(boxed.handle) {}
+      }
+
   }
 
   /** A [[https://www.khronos.org/registry/OpenCL/sdk/2.1/docs/man/xhtml/abstractDataTypes.html cl_mem]]
@@ -468,36 +482,103 @@ object OpenCL {
     }
   }
 
-  private[compute] final case class Program[Owner <: OpenCL with Singleton](handle: Long) extends AnyVal {
+  final case class Kernel[Owner <: OpenCL with Singleton](handle: Long)
+      extends AnyVal
+      with MonadicCloseable[UnitContinuation] {
 
-    private def startBuild(deviceIds: PointerBuffer, options: CharSequence, callback: Unit => Unit) = {
-      val userData = JNINativeInterface.NewGlobalRef(callback)
+    def update[A](argIndex: Int, a: A)(implicit memory: Memory[A]): Unit = {
+      val stack = stackPush()
       try {
-        // `userData` will be deleted in Program.programCallback if clBuildProgram returns CL_SUCCESS,
-        checkErrorCode(clBuildProgram(handle, deviceIds, options, Program.programCallback, userData))
-      } catch {
-        case NonFatal(e) =>
-          // `userData` will be deleted here if the build is not started successfully
-          JNINativeInterface.DeleteGlobalRef(userData)
-          throw e
+        val byteBuffer = stack.malloc(memory.numberOfBytesPerElement)
+        memory.put(memory.fromByteBuffer(byteBuffer), 0, a)
+        checkErrorCode(nclSetKernelArg(handle, argIndex, byteBuffer.remaining, memAddress(byteBuffer)))
+      } finally {
+        stack.close()
+      }
+
+    }
+
+    def enqueue(globalWorkSize: Long*)(implicit witnessOwner: Witness.Aux[Owner]): Event[Owner] = {
+      val stack = stackPush()
+      val outputEvent = try {
+        val inputEventBuffer = null
+        val outputEventBuffer = stack.pointers(0L)
+        checkErrorCode(
+          clEnqueueNDRangeKernel(
+            witnessOwner.value.context,
+            handle,
+            globalWorkSize.size,
+            null,
+            stack.pointers(globalWorkSize: _*),
+            null,
+            inputEventBuffer,
+            outputEventBuffer
+          )
+        )
+        outputEventBuffer.get(0)
+      } finally {
+        stack.close()
+      }
+      checkErrorCode(clFlush(handle.toLong))
+      new Event[Owner](outputEvent)
+    }
+
+    override def monadicClose: UnitContinuation[Unit] = {
+      UnitContinuation.delay {
+        checkErrorCode(clReleaseKernel(handle.toLong))
+      }
+    }
+  }
+
+  private[compute] final case class Program[Owner <: OpenCL with Singleton](handle: Long)
+      extends AnyVal
+      with MonadicCloseable[UnitContinuation] {
+
+    private def numberOfKernels: Int = {
+      val result = Array.ofDim[Int](1)
+      checkErrorCode(clCreateKernelsInProgram(handle, null, result))
+      result(0)
+    }
+
+    def kernels = {
+      val kernelBuffer = BufferUtils.createPointerBuffer(numberOfKernels)
+      checkErrorCode(clCreateKernelsInProgram(handle, kernelBuffer, null: IntBuffer))
+      kernelBuffer
+    }
+
+    def firstKernel: Kernel[Owner] = {
+      val stack = stackPush()
+      try {
+        val kernelBuffer = stack.mallocPointer(1)
+        checkErrorCode(clCreateKernelsInProgram(handle, kernelBuffer, null: IntBuffer))
+        Kernel(kernelBuffer.get(1))
+      } finally {
+        stack.close()
       }
     }
 
-    def build(deviceIds: Seq[Long], options: CharSequence = ""): UnitContinuation[Unit] = UnitContinuation.async {
-      (handler: Unit => Unit) =>
-        val stack = stackPush()
-        try {
-          startBuild(stack.pointers(deviceIds: _*), options, handler)
-        } finally {
-          stack.close()
-        }
+    private def startBuild(deviceIds: PointerBuffer, options: CharSequence) = {
+      checkErrorCode(clBuildProgram(handle, deviceIds, options, null, NULL))
     }
 
-    def build(options: CharSequence): UnitContinuation[Unit] = UnitContinuation.async { (handler: Unit => Unit) =>
-      startBuild(null, options, handler)
+    def build(deviceIds: Seq[Long], options: CharSequence = ""): Unit = {
+      val stack = stackPush()
+      try {
+        checkErrorCode(clBuildProgram(handle, stack.pointers(deviceIds: _*), options, null, NULL))
+      } finally {
+        stack.close()
+      }
     }
 
-    def build(): UnitContinuation[Unit] = build("")
+    def build(options: CharSequence): Unit = {
+      checkErrorCode(clBuildProgram(handle, null, options, null, NULL))
+    }
+
+    def build(): Unit = build("")
+
+    def monadicClose = UnitContinuation.delay {
+      OpenCL.checkErrorCode(clReleaseProgram(handle))
+    }
   }
 
   object Program {

@@ -2,6 +2,8 @@ package com.thoughtworks.compute
 
 import java.nio.ByteBuffer
 
+import com.dongxiguo.fastring.Fastring
+import com.dongxiguo.fastring.Fastring.Implicits._
 import com.thoughtworks.continuation._
 import com.thoughtworks.feature.{Factory, ImplicitApply}
 import com.thoughtworks.feature.mixins.ImplicitsSingleton
@@ -24,28 +26,50 @@ object OpenCLBenchmark {
   trait TestKernels extends OpenCL with OpenCL.CommandQueuePool {
 
     @transient
-    private lazy val compiledProgram: Long = {
-      context
+    private lazy val compiledProgram: Program = {
+      val program = createProgramWithSource(fastraw"""
+      float sample(float* input, ptrdiff_t x, ptrdiff_t y, ptrdiff_t width, ptrdiff_t height) {
+        if (x >= 0 && x < width && y >= 0 && y < height) {
+          return input[y * width + x];
+        } else {
+          return 0.0f;
+        }
+      }
 
-      // TODO: blocking compilation
-      ???
+      kernel void benchmark(float* input, float* output, float* weight) {
+        size_t x = get_global_id(0);
+        size_t width = get_global_size(0);
+        size_t y = get_global_id(1);
+        size_t height = get_global_size(1);
+        output[y * width + x] = ${(for {
+        offsetX <- ConvolutionalKernelX
+        offsetY <- ConvolutionalKernelY
+      } yield fast"sample(input, x + ($offsetX), y + ($offsetY), width, height)").mkFastring(" + ")};
+      }
+      """)
+
+      program.build()
+      program
+
     }
 
     override def monadicClose: UnitContinuation[Unit] = {
-      UnitContinuation.delay {
-        OpenCL.checkErrorCode(clReleaseProgram(compiledProgram))
-      } >> super.monadicClose
+      compiledProgram.monadicClose >> super.monadicClose
     }
 
     def test(input: DeviceBuffer[Float], output: DeviceBuffer[Float], weight: DeviceBuffer[Float]): Future[Unit] = {
+      val kernel = compiledProgram.firstKernel
+      kernel(0) = input
+      kernel(1) = output
+      kernel(2) = weight
       ???
     }
 
   }
 
-  final val ConvolutionalKernelWeight = 3
-  final val ConvolutionalKernelHeight = 3
-  final val ConvolutionalKernelSize: Int = ConvolutionalKernelWeight * ConvolutionalKernelHeight
+  final val ConvolutionalKernelX = -1 to 1
+  final val ConvolutionalKernelY = -1 to 1
+  final val ConvolutionalKernelSize: Int = ConvolutionalKernelX.length * ConvolutionalKernelY.length
 
   private val handleOpenCLNotification = { (errorInfo: String, buffer: ByteBuffer) =>
     if (buffer.remaining > 0) {
