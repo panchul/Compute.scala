@@ -316,31 +316,43 @@ object OpenCL {
       }
       Do(TryT(ResourceT(bufferContinuation)))
     }
+
+    val eventCallback: CLEventCallback = CLEventCallback.create(new CLEventCallbackI {
+      final def invoke(event: Long, status: Int, userData: Long): Unit = {
+        val scalaCallback = try { memGlobalRefToObject[Int => Unit](userData) } finally {
+          JNINativeInterface.DeleteGlobalRef(userData)
+        }
+        scalaCallback(status)
+      }
+    })
   }
 
   private[OpenCL] final case class Event[Owner <: Singleton with OpenCL](handle: Long) extends AnyVal {
-
-    def waitFor(callbackType: Int): Future[Unit] = Future.async { continue: (Try[Unit] => Unit) =>
-      val callback = new (() => CLEventCallback) with CLEventCallbackI {
-        private val container = CLEventCallback.create(this)
-        final def invoke(event: Long, status: Int, userData: Long): Unit = {
-          container.close()
-          status match {
-            case `callbackType`             => continue(Success(()))
-            case errorCode if errorCode < 0 => continue(Failure(Exceptions.fromErrorCode(errorCode)))
-            case _                          => throw new IllegalStateException()
-          }
-        }
-        final def apply(): CLEventCallback = container
-      }
-      checkErrorCode(
-        clSetEventCallback(
-          handle,
-          callbackType,
-          callback(),
-          NULL
+    type Status = Int
+    def waitForStatus(callbackType: Status): UnitContinuation[Status] = UnitContinuation.async { (continue: Status => Unit) =>
+      val userData = JNINativeInterface.NewGlobalRef(continue)
+      try {
+        checkErrorCode(
+          clSetEventCallback(
+            handle,
+            callbackType,
+            Event.eventCallback,
+            userData
+          )
         )
-      )
+      } catch {
+        case NonFatal(e) =>
+          JNINativeInterface.DeleteGlobalRef(userData)
+          throw e
+      }
+    }
+
+    def waitFor(callbackType: Status): Future[Unit] = {
+      Future(TryT(waitForStatus(callbackType).map {
+        case `callbackType`             => Success(())
+        case errorCode if errorCode < 0 => Failure(Exceptions.fromErrorCode(errorCode))
+        case status                     => throw new IllegalStateException(raw"""Invalid event status $status""")
+      }))
     }
 
     def waitForComplete(): Future[Unit] = waitFor(CL_COMPLETE)
@@ -456,9 +468,90 @@ object OpenCL {
     }
   }
 
+  private[compute] final case class Program[Owner <: OpenCL with Singleton](handle: Long) extends AnyVal {
+
+    private def startBuild(deviceIds: PointerBuffer, options: CharSequence, callback: Unit => Unit) = {
+      val userData = JNINativeInterface.NewGlobalRef(callback)
+      try {
+        // `userData` will be deleted in Program.programCallback if clBuildProgram returns CL_SUCCESS,
+        checkErrorCode(clBuildProgram(handle, deviceIds, options, Program.programCallback, userData))
+      } catch {
+        case NonFatal(e) =>
+          // `userData` will be deleted here if the build is not started successfully
+          JNINativeInterface.DeleteGlobalRef(userData)
+          throw e
+      }
+    }
+
+    def build(deviceIds: Seq[Long], options: CharSequence = ""): UnitContinuation[Unit] = UnitContinuation.async {
+      (handler: Unit => Unit) =>
+        val stack = stackPush()
+        try {
+          startBuild(stack.pointers(deviceIds: _*), options, handler)
+        } finally {
+          stack.close()
+        }
+    }
+
+    def build(options: CharSequence): UnitContinuation[Unit] = UnitContinuation.async { (handler: Unit => Unit) =>
+      startBuild(null, options, handler)
+    }
+
+    def build(): UnitContinuation[Unit] = build("")
+  }
+
+  object Program {
+
+    override def finalize(): Unit = {
+      programCallback.close()
+    }
+
+    val programCallback = CLProgramCallback.create(new CLProgramCallbackI {
+      override def invoke(program: Long, userData: Long): Unit = {
+        val scalaCallback = try {
+          memGlobalRefToObject[Unit => Unit](userData)
+        } finally {
+          JNINativeInterface.DeleteGlobalRef(userData)
+        }
+        scalaCallback(())
+      }
+    })
+
+  }
+
 }
 
 trait OpenCL extends MonadicCloseable[UnitContinuation] with ImplicitsSingleton {
+  type Program = OpenCL.Program[this.type]
+  protected def createProgramWithSource(sourceCode: TraversableOnce[CharSequence]): Program = {
+    val stack = stackPush()
+    try {
+      val errorCodeBuffer = stack.ints(CL_SUCCESS)
+      val codeBuffers = (for {
+        snippet <- sourceCode
+        if snippet.length > 0
+      } yield memUTF8(snippet, false)).toArray
+      val pointers = memAllocPointer(codeBuffers.length)
+      val lengths = memAllocPointer(codeBuffers.length)
+      for (buffer <- codeBuffers) {
+        pointers.put(buffer)
+        lengths.put(buffer.remaining)
+      }
+      pointers.position(0)
+      lengths.position(0)
+      try {
+        val programHandle = clCreateProgramWithSource(context, pointers, lengths, errorCodeBuffer)
+        checkErrorCode(errorCodeBuffer.get(0))
+        new Program(programHandle)
+      } finally {
+        memFree(pointers)
+        memFree(lengths)
+        codeBuffers.foreach(memFree)
+      }
+    } finally {
+      stack.close()
+    }
+  }
 
   protected def acquireCommandQueue: Do[Long]
 

@@ -9,6 +9,8 @@ import com.thoughtworks.future._
 import com.thoughtworks.raii.asynchronous._
 import org.lwjgl.opencl.CL10._
 import org.lwjgl.opencl.CLCapabilities
+import org.lwjgl.system.MemoryStack._
+import org.lwjgl.system.MemoryUtil._
 import org.openjdk.jmh.annotations.{Benchmark, Param, Scope, State}
 
 import scalaz.std.stream._
@@ -20,8 +22,11 @@ import scalaz.syntax.all._
 object OpenCLBenchmark {
 
   trait TestKernels extends OpenCL with OpenCL.CommandQueuePool {
+
     @transient
     private lazy val compiledProgram: Long = {
+      context
+
       // TODO: blocking compilation
       ???
     }
@@ -38,9 +43,9 @@ object OpenCLBenchmark {
 
   }
 
-  val ConvolutionalKernelWeight = 3
-  val ConvolutionalKernelHeight = 3
-  val ConvolutionalKernelSize = ConvolutionalKernelWeight * ConvolutionalKernelHeight
+  final val ConvolutionalKernelWeight = 3
+  final val ConvolutionalKernelHeight = 3
+  final val ConvolutionalKernelSize: Int = ConvolutionalKernelWeight * ConvolutionalKernelHeight
 
   private val handleOpenCLNotification = { (errorInfo: String, buffer: ByteBuffer) =>
     if (buffer.remaining > 0) {
