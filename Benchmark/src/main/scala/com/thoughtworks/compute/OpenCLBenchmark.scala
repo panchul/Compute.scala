@@ -3,11 +3,12 @@ package com.thoughtworks.compute
 import java.nio.ByteBuffer
 
 import com.thoughtworks.continuation._
-import com.thoughtworks.feature.Factory
+import com.thoughtworks.feature.{Factory, ImplicitApply}
 import com.thoughtworks.feature.mixins.ImplicitsSingleton
 import com.thoughtworks.future._
 import com.thoughtworks.raii.asynchronous._
 import org.lwjgl.opencl.CL10._
+import org.lwjgl.opencl.CLCapabilities
 import org.openjdk.jmh.annotations.{Benchmark, Param, Scope, State}
 
 import scalaz.std.stream._
@@ -74,12 +75,15 @@ class OpenCLBenchmark {
   @Benchmark
   def test(): Unit = {
 
+    val numberOfCommandQueuesForDevice = { (deviceId: Long, capabilities: CLCapabilities) =>
+      numberOfConcurrentLayers
+    }
     val doOpenCL = Do.monadicCloseable {
       Factory[
         TestKernels with OpenCL with OpenCL.UseAllDevices with OpenCL.UseFirstPlatform with ImplicitsSingleton with OpenCL.CommandQueuePool]
         .newInstance(
           handleOpenCLNotification = handleOpenCLNotification,
-          numberOfCommandQueues = numberOfConcurrentLayers
+          numberOfCommandQueuesForDevice = numberOfCommandQueuesForDevice
         )
     }
 

@@ -1,7 +1,8 @@
 package com.thoughtworks.compute
 
-import java.io.Closeable
+import scala.collection.JavaConverters._
 import java.nio.{ByteBuffer, IntBuffer}
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
 import org.lwjgl.opencl._
@@ -25,11 +26,12 @@ import scala.util.control.Exception.Catcher
 import scala.util.control.{NonFatal, TailCalls}
 import scala.util.control.TailCalls.TailRec
 import scala.util.{Failure, Success, Try}
-import scalaz.{-\/, \/, \/-}
+import scalaz.{-\/, Memo, \/, \/-}
 import scalaz.syntax.all._
 import com.thoughtworks.continuation._
 import com.thoughtworks.feature.mixins.ImplicitsSingleton
 import com.thoughtworks.future._
+import com.thoughtworks.raii.AsynchronousPool
 import com.thoughtworks.raii.asynchronous._
 import com.thoughtworks.raii.covariant._
 import com.thoughtworks.tryt.covariant._
@@ -271,14 +273,39 @@ object OpenCL {
 
     // TODO: enqueue kernel
     // TODO: TDD
-    def commandQueue: Do[CommandQueue] = {
-      ???
+
+    protected val numberOfCommandQueuesForDevice: (Long, CLCapabilities) => Int
+
+    @transient private lazy val commandQueues: Seq[Long] = {
+      deviceIds.flatMap { deviceId =>
+        val capabilities = deviceCapabilities(deviceId)
+        for (i <- 0 until numberOfCommandQueuesForDevice(deviceId, capabilities)) yield {
+          val supportedProperties = deviceLongInfo(deviceId, CL_DEVICE_QUEUE_PROPERTIES)
+          val properties = Map(
+            CL_QUEUE_PROPERTIES -> (supportedProperties | CL_QUEUE_ON_DEVICE)
+          )
+          createCommandQueue(deviceId, properties)
+        }
+      }
     }
 
-    private val state: AtomicReference[CommandQueuePool.State] = ???
+    val Resource(acquireCommandQueue, shutdownCommandQueues) = AsynchronousPool.preloaded(commandQueues)
 
-    protected val numberOfCommandQueues: Int
+    private def deviceLongInfo(deviceId: Long, paramName: Int): Long = {
+      val buffer = Array[Long](0L)
+      checkErrorCode(clGetDeviceInfo(deviceId, paramName, buffer, null))
+      val Array(value) = buffer
+      value
+    }
 
+    override def monadicClose: UnitContinuation[Unit] = {
+      shutdownCommandQueues >> {
+        for (commandQueue <- commandQueues) {
+          checkErrorCode(clReleaseCommandQueue(commandQueue))
+        }
+        super.monadicClose
+      }
+    }
   }
   private[OpenCL] object Event {
     private[OpenCL] def delay[Owner <: OpenCL with Singleton](handle: => Long): Do[Event[Owner]] = {
@@ -376,7 +403,7 @@ object OpenCL {
         witnessOwner: Witness.Aux[Owner],
         memory: Memory.Aux[Element, Destination]): Do[Event[Owner]] = {
 
-      witnessOwner.value.commandQueue.flatMap { commandQueue =>
+      witnessOwner.value.acquireCommandQueue.flatMap { commandQueue =>
         Event.delay[Owner] {
           val outputEvent = {
             val stack = stackPush()
@@ -384,18 +411,18 @@ object OpenCL {
               val (inputEventBufferSize, inputEventBufferAddress) = if (preconditionEvents.isEmpty) {
                 (0, NULL)
               } else {
-                val inputEventBuffer = stack.pointers(preconditionEvents.view.map(_.handle.toLong): _*)
+                val inputEventBuffer = stack.pointers(preconditionEvents.view.map(_.handle): _*)
                 (preconditionEvents.length, inputEventBuffer.address())
               }
               val outputEventBuffer = stack.pointers(0L)
               checkErrorCode(
                 nclEnqueueReadBuffer(
-                  commandQueue.handle,
+                  commandQueue,
                   deviceBuffer.handle,
                   CL_FALSE,
                   0,
                   memory.remainingBytes(hostBuffer),
-                  memory.address(hostBuffer).toLong,
+                  memory.address(hostBuffer),
                   inputEventBufferSize,
                   inputEventBufferAddress,
                   outputEventBuffer.address()
@@ -406,7 +433,7 @@ object OpenCL {
               stack.close()
             }
           }
-          checkErrorCode(clFlush(handle.toLong))
+          checkErrorCode(clFlush(handle))
           outputEvent
         }
       }
@@ -429,13 +456,11 @@ object OpenCL {
     }
   }
 
-  final case class CommandQueue[Owner <: OpenCL with Singleton](handle: Long) extends AnyVal
-
 }
 
 trait OpenCL extends MonadicCloseable[UnitContinuation] with ImplicitsSingleton {
 
-  def commandQueue: Do[CommandQueue]
+  protected def acquireCommandQueue: Do[Long]
 
   def monadicClose: UnitContinuation[Unit] = UnitContinuation.delay {
     checkErrorCode(clReleaseContext(context))
@@ -447,6 +472,35 @@ trait OpenCL extends MonadicCloseable[UnitContinuation] with ImplicitsSingleton 
 
   protected val platformId: Long
   protected val deviceIds: Seq[Long]
+
+  @transient
+  private lazy val platformCapabilities: CLCapabilities = {
+    CL.createPlatformCapabilities(platformId)
+  }
+
+  protected def createCommandQueue(deviceId: Long, properties: Map[Int, Long]): Long = {
+    if (deviceCapabilities(deviceId).OpenCL20) {
+      val cl20Properties = (properties.view.flatMap { case (key, value) => Seq(key, value) } ++ Seq(0L)).toArray
+      val a = Array(0)
+      val commandQueue =
+        clCreateCommandQueueWithProperties(platformId, deviceId, cl20Properties, a)
+      checkErrorCode(a(0))
+      commandQueue
+    } else {
+      val cl10Properties = properties.getOrElse(CL_QUEUE_PROPERTIES, 0L)
+      val a = Array(0)
+      val commandQueue = clCreateCommandQueue(platformId, deviceId, cl10Properties, a)
+      checkErrorCode(a(0))
+      commandQueue
+    }
+  }
+
+  @transient
+  protected lazy val deviceCapabilities: Long => CLCapabilities = {
+    Memo.mutableMapMemo(new ConcurrentHashMap[Long, CLCapabilities].asScala) { deviceId =>
+      CL.createDeviceCapabilities(deviceId, platformCapabilities)
+    }
+  }
 
   @transient @volatile
   protected lazy val context: Long = {
@@ -473,7 +527,6 @@ trait OpenCL extends MonadicCloseable[UnitContinuation] with ImplicitsSingleton 
   val implicits: Implicits
 
   type DeviceBuffer[Element] = OpenCL.DeviceBuffer[this.type, Element]
-  type CommandQueue = OpenCL.CommandQueue[this.type]
 
   /** Returns an uninitialized buffer of `Element` on device.
     */
@@ -502,7 +555,7 @@ trait OpenCL extends MonadicCloseable[UnitContinuation] with ImplicitsSingleton 
         val buffer = nclCreateBuffer(context,
                                      CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE,
                                      memory.remainingBytes(hostBuffer),
-                                     memory.address(hostBuffer).toLong,
+                                     memory.address(hostBuffer),
                                      memAddress(errorCodeBuffer))
         checkErrorCode(errorCodeBuffer.get(0))
         buffer
