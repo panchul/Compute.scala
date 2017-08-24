@@ -482,7 +482,7 @@ object OpenCL {
     }
   }
 
-  final case class Kernel[Owner <: OpenCL with Singleton](handle: Long)
+  private[compute] final case class Kernel[Owner <: OpenCL with Singleton](handle: Long)
       extends AnyVal
       with MonadicCloseable[UnitContinuation] {
 
@@ -498,29 +498,33 @@ object OpenCL {
 
     }
 
-    def enqueue(globalWorkSize: Long*)(implicit witnessOwner: Witness.Aux[Owner]): Event[Owner] = {
-      val stack = stackPush()
-      val outputEvent = try {
-        val inputEventBuffer = null
-        val outputEventBuffer = stack.pointers(0L)
-        checkErrorCode(
-          clEnqueueNDRangeKernel(
-            witnessOwner.value.context,
-            handle,
-            globalWorkSize.size,
-            null,
-            stack.pointers(globalWorkSize: _*),
-            null,
-            inputEventBuffer,
-            outputEventBuffer
-          )
-        )
-        outputEventBuffer.get(0)
-      } finally {
-        stack.close()
+    def enqueue(globalWorkSize: Long*)(implicit witnessOwner: Witness.Aux[Owner]): Do[Event[Owner]] = {
+      witnessOwner.value.acquireCommandQueue.flatMap { commandQueue =>
+        Event.delay {
+          val stack = stackPush()
+          val outputEvent = try {
+            val inputEventBuffer = null
+            val outputEventBuffer = stack.pointers(0L)
+            checkErrorCode(
+              clEnqueueNDRangeKernel(
+                commandQueue,
+                handle,
+                globalWorkSize.size,
+                null,
+                stack.pointers(globalWorkSize: _*),
+                null,
+                inputEventBuffer,
+                outputEventBuffer
+              )
+            )
+            outputEventBuffer.get(0)
+          } finally {
+            stack.close()
+          }
+          checkErrorCode(clFlush(handle.toLong))
+          outputEvent
+        }
       }
-      checkErrorCode(clFlush(handle.toLong))
-      new Event[Owner](outputEvent)
     }
 
     override def monadicClose: UnitContinuation[Unit] = {

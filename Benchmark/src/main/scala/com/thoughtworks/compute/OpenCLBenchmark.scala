@@ -14,6 +14,7 @@ import org.lwjgl.opencl.CLCapabilities
 import org.lwjgl.system.MemoryStack._
 import org.lwjgl.system.MemoryUtil._
 import org.openjdk.jmh.annotations.{Benchmark, Param, Scope, State}
+import shapeless.Witness
 
 import scalaz.std.stream._
 import scalaz.syntax.all._
@@ -57,14 +58,24 @@ object OpenCLBenchmark {
       compiledProgram.monadicClose >> super.monadicClose
     }
 
-    def test(input: DeviceBuffer[Float], output: DeviceBuffer[Float], weight: DeviceBuffer[Float]): Future[Unit] = {
-      val kernel = compiledProgram.firstKernel
-      kernel(0) = input
-      kernel(1) = output
-      kernel(2) = weight
-      ???
-    }
+    def test(input: DeviceBuffer[Float],
+             output: DeviceBuffer[Float],
+             weight: DeviceBuffer[Float],
+             width: Int,
+             height: Int): Future[Unit] = {
+      Do.monadicCloseable(compiledProgram.firstKernel)
+        .flatMap { kernel =>
+          kernel(0) = input
+          kernel(1) = output
+          kernel(2) = weight
+          val self: this.type = this
+          kernel.enqueue(width, height)(Witness(self)).flatMap { event =>
+            Do.garbageCollected(event.waitForComplete())
+          }
+        }
+        .run
 
+    }
   }
 
   final val ConvolutionalKernelX = -1 to 1
@@ -142,6 +153,8 @@ class OpenCLBenchmark {
               inputSlices(layerIndex),
               outputSlices(layerIndex),
               weightSlices(layerIndex),
+              width,
+              height
             )
           })
         } yield {
