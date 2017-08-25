@@ -33,7 +33,7 @@ object OpenCLBenchmark {
     private[OpenCLBenchmark] lazy val compiledProgram: Program = {
 
       val program = createProgramWithSource(fastraw"""
-      float sample(global float* restrict input, size_t image_index, ptrdiff_t x, ptrdiff_t y, ptrdiff_t width, ptrdiff_t height) {
+      float sample(global const float* restrict input, const size_t image_index, const ptrdiff_t x, const ptrdiff_t y, const ptrdiff_t width, const ptrdiff_t height) {
         if (x >= 0 && x < width && y >= 0 && y < height) {
           return input[image_index * width * height, y * width + x];
         } else {
@@ -41,16 +41,14 @@ object OpenCLBenchmark {
         }
       }
 
-      kernel void benchmark(global float* restrict input, global float* restrict output, global float* restrict weight) {
-        size_t image_index = get_global_id(0);
-        size_t batch_size = get_global_size(0);
-        size_t x = get_global_id(1);
-        size_t width = get_global_size(1);implicit def keepLastException = new Semigroup[Throwable] {
-          override def append(f1: Throwable, f2: => Throwable) = f2
-        }
-        size_t y = get_global_id(2);
-        size_t height = get_global_size(2);
-        output[y * width + x] = ${(for {
+      kernel void benchmark(global const float* restrict input, global float* restrict output, global const float* restrict weight) {
+        const size_t image_index = get_global_id(0);
+        const size_t batch_size = get_global_size(0);
+        const size_t x = get_global_id(1);
+        const size_t width = get_global_size(1);
+        const size_t y = get_global_id(2);
+        const size_t height = get_global_size(2);
+        output[image_index * width * height + y * width + x] = ${(for {
         offsetX <- ConvolutionalKernelX
         offsetY <- ConvolutionalKernelY
       } yield fast"sample(input, image_index, x + ($offsetX), y + ($offsetY), width, height)").mkFastring(" + ")};
