@@ -41,7 +41,7 @@ object OpenCLBenchmark {
         }
       }
 
-      kernel void benchmark(global const float* restrict input, global float* restrict output, global float* restrict weight) {
+      kernel void benchmark(global float* restrict input, global float* restrict output, global float* restrict weight) {
         size_t image_index = get_global_id(0);
         size_t batch_size = get_global_size(0);
         size_t x = get_global_id(1);

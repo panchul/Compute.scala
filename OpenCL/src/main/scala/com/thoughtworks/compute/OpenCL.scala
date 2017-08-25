@@ -500,6 +500,7 @@ object OpenCL {
     }
 
     def enqueue(globalWorkSize: Long*)(implicit witnessOwner: Witness.Aux[Owner]): Do[Event[Owner]] = {
+      println("enqueue on " + handle)
       witnessOwner.value.acquireCommandQueue.flatMap { commandQueue =>
         Event.delay {
           val stack = stackPush()
