@@ -1,0 +1,725 @@
+#
+# There is insufficient memory for the Java Runtime Environment to continue.
+# Native memory allocation (mmap) failed to map 352321536 bytes for committing reserved memory.
+# Possible reasons:
+#   The system is out of physical RAM or swap space
+#   In 32 bit mode, the process size limit was hit
+# Possible solutions:
+#   Reduce memory load on the system
+#   Increase physical memory or swap space
+#   Check if swap backing store is full
+#   Use 64 bit Java on a 64 bit OS
+#   Decrease Java heap size (-Xmx/-Xms)
+#   Decrease number of Java threads
+#   Decrease Java thread stack sizes (-Xss)
+#   Set larger code cache with -XX:ReservedCodeCacheSize=
+# This output file may be truncated or incomplete.
+#
+#  Out of Memory Error (os_linux.cpp:2643), pid=10656, tid=0x00007ffbbbae8700
+#
+# JRE version:  (8.0_131-b11) (build )
+# Java VM: OpenJDK 64-Bit Server VM (25.131-b11 mixed mode linux-amd64 compressed oops)
+# Failed to write core dump. Core dumps have been disabled. To enable core dumping, try "ulimit -c unlimited" before starting Java again
+#
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x00007ffbb400c000):  JavaThread "Unknown thread" [_thread_in_vm, id=10660, stack(0x00007ffbbb9e8000,0x00007ffbbbae9000)]
+
+Stack: [0x00007ffbbb9e8000,0x00007ffbbbae9000],  sp=0x00007ffbbbae7630,  free space=1021k
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [libjvm.so+0xa6a1bb]
+V  [libjvm.so+0x4c5a6c]
+V  [libjvm.so+0x8b85a0]
+V  [libjvm.so+0x8b2a1e]
+V  [libjvm.so+0x92d556]
+V  [libjvm.so+0x91e033]
+V  [libjvm.so+0x2af381]
+V  [libjvm.so+0x8ddb29]
+V  [libjvm.so+0xa2d6b9]
+V  [libjvm.so+0xa2d902]
+V  [libjvm.so+0x61103f]
+V  [libjvm.so+0xa12caa]
+V  [libjvm.so+0x68b222]  JNI_CreateJavaVM+0x62
+C  [libjli.so+0x2f2e]
+C  [libjli.so+0x73dd]
+C  [libpthread.so.0+0x76ba]  start_thread+0xca
+
+
+---------------  P R O C E S S  ---------------
+
+Java Threads: ( => current thread )
+
+Other Threads:
+
+=>0x00007ffbb400c000 (exited) JavaThread "Unknown thread" [_thread_in_vm, id=10660, stack(0x00007ffbbb9e8000,0x00007ffbbbae9000)]
+
+VM state:not at safepoint (not fully initialized)
+
+VM Mutex/Monitor currently owned by a thread: None
+
+GC Heap History (0 events):
+No events
+
+Deoptimization events (0 events):
+No events
+
+Internal exceptions (0 events):
+No events
+
+Events (0 events):
+No events
+
+
+Dynamic libraries:
+00400000-00401000 r-xp 00000000 fc:00 20060452                           /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+00600000-00601000 r--p 00000000 fc:00 20060452                           /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+00601000-00602000 rw-p 00001000 fc:00 20060452                           /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+020c9000-020ea000 rw-p 00000000 00:00 0                                  [heap]
+5de000000-718580000 ---p 00000000 00:00 0 
+718580000-722d80000 rw-p 00000000 00:00 0 
+722d80000-7c0000000 ---p 00000000 00:00 0 
+7ffba4047000-7ffba4ac1000 ---p 00000000 00:00 0 
+7ffba4ac1000-7ffba4b16000 rw-p 00000000 00:00 0 
+7ffba4b16000-7ffba4fff000 ---p 00000000 00:00 0 
+7ffba4fff000-7ffba5000000 rw-p 00000000 00:00 0 
+7ffba5000000-7ffba5270000 rwxp 00000000 00:00 0 
+7ffba5270000-7ffbb4000000 ---p 00000000 00:00 0 
+7ffbb4000000-7ffbb4033000 rw-p 00000000 00:00 0 
+7ffbb4033000-7ffbb8000000 ---p 00000000 00:00 0 
+7ffbb809f000-7ffbb80a9000 rw-p 00000000 00:00 0 
+7ffbb80a9000-7ffbb845f000 ---p 00000000 00:00 0 
+7ffbb845f000-7ffbb8467000 r-xp 00000000 fc:00 20057073                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/libzip.so
+7ffbb8467000-7ffbb8666000 ---p 00008000 fc:00 20057073                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/libzip.so
+7ffbb8666000-7ffbb8667000 r--p 00007000 fc:00 20057073                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/libzip.so
+7ffbb8667000-7ffbb8668000 rw-p 00008000 fc:00 20057073                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/libzip.so
+7ffbb8668000-7ffbb8673000 r-xp 00000000 fc:00 2884663                    /lib/x86_64-linux-gnu/libnss_files-2.23.so
+7ffbb8673000-7ffbb8872000 ---p 0000b000 fc:00 2884663                    /lib/x86_64-linux-gnu/libnss_files-2.23.so
+7ffbb8872000-7ffbb8873000 r--p 0000a000 fc:00 2884663                    /lib/x86_64-linux-gnu/libnss_files-2.23.so
+7ffbb8873000-7ffbb8874000 rw-p 0000b000 fc:00 2884663                    /lib/x86_64-linux-gnu/libnss_files-2.23.so
+7ffbb8874000-7ffbb887a000 rw-p 00000000 00:00 0 
+7ffbb887a000-7ffbb8885000 r-xp 00000000 fc:00 2884668                    /lib/x86_64-linux-gnu/libnss_nis-2.23.so
+7ffbb8885000-7ffbb8a84000 ---p 0000b000 fc:00 2884668                    /lib/x86_64-linux-gnu/libnss_nis-2.23.so
+7ffbb8a84000-7ffbb8a85000 r--p 0000a000 fc:00 2884668                    /lib/x86_64-linux-gnu/libnss_nis-2.23.so
+7ffbb8a85000-7ffbb8a86000 rw-p 0000b000 fc:00 2884668                    /lib/x86_64-linux-gnu/libnss_nis-2.23.so
+7ffbb8a86000-7ffbb8a9c000 r-xp 00000000 fc:00 2884658                    /lib/x86_64-linux-gnu/libnsl-2.23.so
+7ffbb8a9c000-7ffbb8c9b000 ---p 00016000 fc:00 2884658                    /lib/x86_64-linux-gnu/libnsl-2.23.so
+7ffbb8c9b000-7ffbb8c9c000 r--p 00015000 fc:00 2884658                    /lib/x86_64-linux-gnu/libnsl-2.23.so
+7ffbb8c9c000-7ffbb8c9d000 rw-p 00016000 fc:00 2884658                    /lib/x86_64-linux-gnu/libnsl-2.23.so
+7ffbb8c9d000-7ffbb8c9f000 rw-p 00000000 00:00 0 
+7ffbb8c9f000-7ffbb8ca7000 r-xp 00000000 fc:00 2884674                    /lib/x86_64-linux-gnu/libnss_compat-2.23.so
+7ffbb8ca7000-7ffbb8ea6000 ---p 00008000 fc:00 2884674                    /lib/x86_64-linux-gnu/libnss_compat-2.23.so
+7ffbb8ea6000-7ffbb8ea7000 r--p 00007000 fc:00 2884674                    /lib/x86_64-linux-gnu/libnss_compat-2.23.so
+7ffbb8ea7000-7ffbb8ea8000 rw-p 00008000 fc:00 2884674                    /lib/x86_64-linux-gnu/libnss_compat-2.23.so
+7ffbb8ea8000-7ffbb8ed5000 r-xp 00000000 fc:00 20060407                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/libjava.so
+7ffbb8ed5000-7ffbb90d4000 ---p 0002d000 fc:00 20060407                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/libjava.so
+7ffbb90d4000-7ffbb90d5000 r--p 0002c000 fc:00 20060407                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/libjava.so
+7ffbb90d5000-7ffbb90d7000 rw-p 0002d000 fc:00 20060407                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/libjava.so
+7ffbb90d7000-7ffbb90e6000 r-xp 00000000 fc:00 20057066                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/libverify.so
+7ffbb90e6000-7ffbb92e5000 ---p 0000f000 fc:00 20057066                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/libverify.so
+7ffbb92e5000-7ffbb92e7000 r--p 0000e000 fc:00 20057066                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/libverify.so
+7ffbb92e7000-7ffbb92e8000 rw-p 00010000 fc:00 20057066                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/libverify.so
+7ffbb92e8000-7ffbb92ef000 r-xp 00000000 fc:00 2884670                    /lib/x86_64-linux-gnu/librt-2.23.so
+7ffbb92ef000-7ffbb94ee000 ---p 00007000 fc:00 2884670                    /lib/x86_64-linux-gnu/librt-2.23.so
+7ffbb94ee000-7ffbb94ef000 r--p 00006000 fc:00 2884670                    /lib/x86_64-linux-gnu/librt-2.23.so
+7ffbb94ef000-7ffbb94f0000 rw-p 00007000 fc:00 2884670                    /lib/x86_64-linux-gnu/librt-2.23.so
+7ffbb94f0000-7ffbb9506000 r-xp 00000000 fc:00 2884105                    /lib/x86_64-linux-gnu/libgcc_s.so.1
+7ffbb9506000-7ffbb9705000 ---p 00016000 fc:00 2884105                    /lib/x86_64-linux-gnu/libgcc_s.so.1
+7ffbb9705000-7ffbb9706000 rw-p 00015000 fc:00 2884105                    /lib/x86_64-linux-gnu/libgcc_s.so.1
+7ffbb9706000-7ffbb980e000 r-xp 00000000 fc:00 2884679                    /lib/x86_64-linux-gnu/libm-2.23.so
+7ffbb980e000-7ffbb9a0d000 ---p 00108000 fc:00 2884679                    /lib/x86_64-linux-gnu/libm-2.23.so
+7ffbb9a0d000-7ffbb9a0e000 r--p 00107000 fc:00 2884679                    /lib/x86_64-linux-gnu/libm-2.23.so
+7ffbb9a0e000-7ffbb9a0f000 rw-p 00108000 fc:00 2884679                    /lib/x86_64-linux-gnu/libm-2.23.so
+7ffbb9a0f000-7ffbb9b81000 r-xp 00000000 fc:00 17697109                   /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7ffbb9b81000-7ffbb9d81000 ---p 00172000 fc:00 17697109                   /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7ffbb9d81000-7ffbb9d8b000 r--p 00172000 fc:00 17697109                   /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7ffbb9d8b000-7ffbb9d8d000 rw-p 0017c000 fc:00 17697109                   /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7ffbb9d8d000-7ffbb9d91000 rw-p 00000000 00:00 0 
+7ffbb9d91000-7ffbba9e5000 r-xp 00000000 fc:00 20057072                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server/libjvm.so
+7ffbba9e5000-7ffbbabe5000 ---p 00c54000 fc:00 20057072                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server/libjvm.so
+7ffbbabe5000-7ffbbac78000 r--p 00c54000 fc:00 20057072                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server/libjvm.so
+7ffbbac78000-7ffbbaca1000 rw-p 00ce7000 fc:00 20057072                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server/libjvm.so
+7ffbbaca1000-7ffbbacd1000 rw-p 00000000 00:00 0 
+7ffbbacd1000-7ffbbace9000 r-xp 00000000 fc:00 2884667                    /lib/x86_64-linux-gnu/libpthread-2.23.so
+7ffbbace9000-7ffbbaee8000 ---p 00018000 fc:00 2884667                    /lib/x86_64-linux-gnu/libpthread-2.23.so
+7ffbbaee8000-7ffbbaee9000 r--p 00017000 fc:00 2884667                    /lib/x86_64-linux-gnu/libpthread-2.23.so
+7ffbbaee9000-7ffbbaeea000 rw-p 00018000 fc:00 2884667                    /lib/x86_64-linux-gnu/libpthread-2.23.so
+7ffbbaeea000-7ffbbaeee000 rw-p 00000000 00:00 0 
+7ffbbaeee000-7ffbbaef1000 r-xp 00000000 fc:00 2884673                    /lib/x86_64-linux-gnu/libdl-2.23.so
+7ffbbaef1000-7ffbbb0f0000 ---p 00003000 fc:00 2884673                    /lib/x86_64-linux-gnu/libdl-2.23.so
+7ffbbb0f0000-7ffbbb0f1000 r--p 00002000 fc:00 2884673                    /lib/x86_64-linux-gnu/libdl-2.23.so
+7ffbbb0f1000-7ffbbb0f2000 rw-p 00003000 fc:00 2884673                    /lib/x86_64-linux-gnu/libdl-2.23.so
+7ffbbb0f2000-7ffbbb10b000 r-xp 00000000 fc:00 2884056                    /lib/x86_64-linux-gnu/libz.so.1.2.8
+7ffbbb10b000-7ffbbb30a000 ---p 00019000 fc:00 2884056                    /lib/x86_64-linux-gnu/libz.so.1.2.8
+7ffbbb30a000-7ffbbb30b000 r--p 00018000 fc:00 2884056                    /lib/x86_64-linux-gnu/libz.so.1.2.8
+7ffbbb30b000-7ffbbb30c000 rw-p 00019000 fc:00 2884056                    /lib/x86_64-linux-gnu/libz.so.1.2.8
+7ffbbb30c000-7ffbbb4cc000 r-xp 00000000 fc:00 2884684                    /lib/x86_64-linux-gnu/libc-2.23.so
+7ffbbb4cc000-7ffbbb6cc000 ---p 001c0000 fc:00 2884684                    /lib/x86_64-linux-gnu/libc-2.23.so
+7ffbbb6cc000-7ffbbb6d0000 r--p 001c0000 fc:00 2884684                    /lib/x86_64-linux-gnu/libc-2.23.so
+7ffbbb6d0000-7ffbbb6d2000 rw-p 001c4000 fc:00 2884684                    /lib/x86_64-linux-gnu/libc-2.23.so
+7ffbbb6d2000-7ffbbb6d6000 rw-p 00000000 00:00 0 
+7ffbbb6d6000-7ffbbb6e3000 r-xp 00000000 fc:00 20057064                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/jli/libjli.so
+7ffbbb6e3000-7ffbbb8e3000 ---p 0000d000 fc:00 20057064                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/jli/libjli.so
+7ffbbb8e3000-7ffbbb8e4000 r--p 0000d000 fc:00 20057064                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/jli/libjli.so
+7ffbbb8e4000-7ffbbb8e5000 rw-p 0000e000 fc:00 20057064                   /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/jli/libjli.so
+7ffbbb8e5000-7ffbbb90b000 r-xp 00000000 fc:00 2884659                    /lib/x86_64-linux-gnu/ld-2.23.so
+7ffbbb9e8000-7ffbbb9eb000 ---p 00000000 00:00 0 
+7ffbbb9eb000-7ffbbbaee000 rw-p 00000000 00:00 0 
+7ffbbbafe000-7ffbbbb06000 rw-s 00000000 fc:00 13370911                   /tmp/hsperfdata_root/10656
+7ffbbbb06000-7ffbbbb07000 rw-p 00000000 00:00 0 
+7ffbbbb07000-7ffbbbb08000 r--p 00000000 00:00 0 
+7ffbbbb08000-7ffbbbb0a000 rw-p 00000000 00:00 0 
+7ffbbbb0a000-7ffbbbb0b000 r--p 00025000 fc:00 2884659                    /lib/x86_64-linux-gnu/ld-2.23.so
+7ffbbbb0b000-7ffbbbb0c000 rw-p 00026000 fc:00 2884659                    /lib/x86_64-linux-gnu/ld-2.23.so
+7ffbbbb0c000-7ffbbbb0d000 rw-p 00000000 00:00 0 
+7fff7c6f5000-7fff7c717000 rw-p 00000000 00:00 0                          [stack]
+7fff7c779000-7fff7c77b000 r--p 00000000 00:00 0                          [vvar]
+7fff7c77b000-7fff7c77d000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+
+VM Arguments:
+java_command: org.openjdk.jmh.Main
+java_class_path (initial): /home/twer/workspace/TheNet/Compute.scala/Benchmark/target/scala-2.12/classes:/home/twer/workspace/TheNet/Compute.scala/OpenCL/target/scala-2.12/classes:/home/twer/workspace/TheNet/Compute.scala/Closeables/target/scala-2.12/classes:/home/twer/workspace/TheNet/Compute.scala/Memory/target/scala-2.12/classes:/root/.coursier/cache/v1/https/repo1.maven.org/maven2/com/thoughtworks/raii/asynchronouspool_2.12/3.0.0-M6/asynchronouspool_2.12-3.0.0-M6.jar:/root/.coursier/cache/v1/https/repo1.maven.org/maven2/org/apache/commons/commons-math3/3.2/commons-math3-3.2.jar:/root/.coursier/cache/v1/https/repo1.maven.org/maven2/com/github/mpilquist/simulacrum_2.12/0.11.0/simulacrum_2.12-0.11.0.jar:/root/.coursier/cache/v1/https/repo1.maven.org/maven2/com/thoughtworks/extractor/extractor_2.12/2.1.0/extractor_2.12-2.1.0.jar:/root/.coursier/cache/v1/https/repo1.maven.org/maven2/com/thoughtworks/raii/covariant_2.12/3.0.0-M6/covariant_2.12-3.0.0-M6.jar:/root/.coursier/cache/v1/https/repo1.maven.org/maven2/com/thoughtworks/tryt/covariant_2.12/2.0.3/covariant_2.12-2.0.3.jar:/root/.coursier/cache/v1/https/repo1.maven.org/maven2/com/thoughtworks/feature/implicitapply_2.12/2.1.0-M0/implicitapply_2.12-2.1.0-M0.jar:/root/.coursier/cache/v1/https/repo1.maven.org/maven2/org/lwjgl/lwjgl-opencl/3.1.2/lwjgl-opencl-3.1.2.jar:/root/.coursier/cache/v1/https/repo1.maven.org/maven2/org/openjdk/jmh/jmh-core/1.19/jmh-core-1.19.jar:/root/.coursier/cache/v1/https/repo1.maven.org/maven2/org/openjdk/jmh/jmh-generator-reflection/1.19/jmh-generator-reflection-1.19.jar:/root/.coursier/cache/v1/https/repo1.maven.org/maven2/org/lwjgl/lwjgl/3.1.2/lwjgl-3.1.2.jar:/root/.coursier/cache/v1/https/repo1.maven.org/maven2/org/scalaz/scalaz-core_2.12/7.2.14/scalaz-core_2.12-7.2.14.jar:/root/.coursier/cache/v1/https/repo1.maven.org/maven2/com/dongxiguo/fastring_2.12/0.3.1/fastring_2.12-0.3.1.jar:/root/.coursier/cache/v1/https/repo1.maven.org/maven2/com/chuusai/shapeless_2.12/2.3.2/shapeless_2.12-2.3
+Launcher Type: SUN_STANDARD
+
+Environment Variables:
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
+USERNAME=root
+SHELL=/bin/bash
+
+Signal Handlers:
+SIGSEGV: [libjvm.so+0xa6ad10], sa_mask[0]=11111111011111111101111111111110, sa_flags=SA_RESTART|SA_SIGINFO
+SIGBUS: [libjvm.so+0xa6ad10], sa_mask[0]=11111111011111111101111111111110, sa_flags=SA_RESTART|SA_SIGINFO
+SIGFPE: [libjvm.so+0x8b3bc0], sa_mask[0]=11111111011111111101111111111110, sa_flags=SA_RESTART|SA_SIGINFO
+SIGPIPE: [libjvm.so+0x8b3bc0], sa_mask[0]=11111111011111111101111111111110, sa_flags=SA_RESTART|SA_SIGINFO
+SIGXFSZ: [libjvm.so+0x8b3bc0], sa_mask[0]=11111111011111111101111111111110, sa_flags=SA_RESTART|SA_SIGINFO
+SIGILL: [libjvm.so+0x8b3bc0], sa_mask[0]=11111111011111111101111111111110, sa_flags=SA_RESTART|SA_SIGINFO
+SIGUSR1: SIG_DFL, sa_mask[0]=00000000000000000000000000000000, sa_flags=none
+SIGUSR2: [libjvm.so+0x8b3a70], sa_mask[0]=00100000000000000000000000000000, sa_flags=SA_RESTART|SA_SIGINFO
+SIGHUP: SIG_DFL, sa_mask[0]=00000000000000000000000000000000, sa_flags=none
+SIGINT: SIG_DFL, sa_mask[0]=00000000000000000000000000000000, sa_flags=none
+SIGTERM: SIG_DFL, sa_mask[0]=00000000000000000000000000000000, sa_flags=none
+SIGQUIT: SIG_DFL, sa_mask[0]=00000000000000000000000000000000, sa_flags=none
+
+
+---------------  S Y S T E M  ---------------
+
+OS:DISTRIB_ID=Ubuntu
+DISTRIB_RELEASE=16.04
+DISTRIB_CODENAME=xenial
+DISTRIB_DESCRIPTION="Ubuntu 16.04.3 LTS"
+
+uname:Linux 4.4.0-91-generic #114-Ubuntu SMP Tue Aug 8 11:56:56 UTC 2017 x86_64
+libc:glibc 2.23 NPTL 2.23 
+rlimit: STACK 8192k, CORE 0k, NPROC 128310, NOFILE 1048576, AS infinity
+load average:2.43 2.34 1.21
+
+/proc/meminfo:
+MemTotal:       32958268 kB
+MemFree:          221932 kB
+MemAvailable:      68788 kB
+Buffers:           17416 kB
+Cached:           100640 kB
+SwapCached:        87356 kB
+Active:         29935380 kB
+Inactive:        2357420 kB
+Active(anon):   29884464 kB
+Inactive(anon):  2309616 kB
+Active(file):      50916 kB
+Inactive(file):    47804 kB
+Unevictable:        3660 kB
+Mlocked:            3660 kB
+SwapTotal:      33501180 kB
+SwapFree:              0 kB
+Dirty:               112 kB
+Writeback:             0 kB
+AnonPages:      32092712 kB
+Mapped:            51812 kB
+Shmem:             16012 kB
+Slab:             121768 kB
+SReclaimable:      58680 kB
+SUnreclaim:        63088 kB
+KernelStack:       18176 kB
+PageTables:       153672 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:    49980312 kB
+Committed_AS:   52092476 kB
+VmallocTotal:   34359738367 kB
+VmallocUsed:           0 kB
+VmallocChunk:          0 kB
+HardwareCorrupted:     0 kB
+AnonHugePages:  26112000 kB
+CmaTotal:              0 kB
+CmaFree:               0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+DirectMap4k:      427516 kB
+DirectMap2M:    28878848 kB
+DirectMap1G:     5242880 kB
+
+
+CPU:total 16 (initial active 16) (16 cores per cpu, 1 threads per core) family 23 model 1 stepping 1, cmov, cx8, fxsr, mmx, sse, sse2, sse3, ssse3, sse4.1, sse4.2, popcnt, avx, avx2, aes, clmul, mmxext, 3dnowpref, lzcnt, sse4a, tsc, tscinvbit, tscinv, bmi1
+
+/proc/cpuinfo:
+processor	: 0
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 7 1700 Eight-Core Processor
+stepping	: 1
+microcode	: 0x8001105
+cpu MHz		: 1550.000
+cache size	: 512 KB
+physical id	: 0
+siblings	: 16
+core id		: 0
+cpu cores	: 8
+apicid		: 0
+initial apicid	: 0
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc extd_apicid aperfmperf eagerfpu pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_l2 mwaitx hw_pstate vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold
+bugs		: fxsave_leak sysret_ss_attrs
+bogomips	: 5988.91
+TLB size	: 2560 4K pages
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 48 bits physical, 48 bits virtual
+power management: ts ttp tm hwpstate eff_freq_ro [13] [14]
+
+processor	: 1
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 7 1700 Eight-Core Processor
+stepping	: 1
+microcode	: 0x8001105
+cpu MHz		: 2700.000
+cache size	: 512 KB
+physical id	: 0
+siblings	: 16
+core id		: 1
+cpu cores	: 8
+apicid		: 1
+initial apicid	: 1
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc extd_apicid aperfmperf eagerfpu pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_l2 mwaitx hw_pstate vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold
+bugs		: fxsave_leak sysret_ss_attrs
+bogomips	: 5988.91
+TLB size	: 2560 4K pages
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 48 bits physical, 48 bits virtual
+power management: ts ttp tm hwpstate eff_freq_ro [13] [14]
+
+processor	: 2
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 7 1700 Eight-Core Processor
+stepping	: 1
+microcode	: 0x8001105
+cpu MHz		: 3000.000
+cache size	: 512 KB
+physical id	: 0
+siblings	: 16
+core id		: 2
+cpu cores	: 8
+apicid		: 2
+initial apicid	: 2
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc extd_apicid aperfmperf eagerfpu pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_l2 mwaitx hw_pstate vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold
+bugs		: fxsave_leak sysret_ss_attrs
+bogomips	: 5988.91
+TLB size	: 2560 4K pages
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 48 bits physical, 48 bits virtual
+power management: ts ttp tm hwpstate eff_freq_ro [13] [14]
+
+processor	: 3
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 7 1700 Eight-Core Processor
+stepping	: 1
+microcode	: 0x8001105
+cpu MHz		: 1550.000
+cache size	: 512 KB
+physical id	: 0
+siblings	: 16
+core id		: 3
+cpu cores	: 8
+apicid		: 3
+initial apicid	: 3
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc extd_apicid aperfmperf eagerfpu pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_l2 mwaitx hw_pstate vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold
+bugs		: fxsave_leak sysret_ss_attrs
+bogomips	: 5988.91
+TLB size	: 2560 4K pages
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 48 bits physical, 48 bits virtual
+power management: ts ttp tm hwpstate eff_freq_ro [13] [14]
+
+processor	: 4
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 7 1700 Eight-Core Processor
+stepping	: 1
+microcode	: 0x8001105
+cpu MHz		: 1550.000
+cache size	: 512 KB
+physical id	: 0
+siblings	: 16
+core id		: 4
+cpu cores	: 8
+apicid		: 4
+initial apicid	: 4
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc extd_apicid aperfmperf eagerfpu pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_l2 mwaitx hw_pstate vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold
+bugs		: fxsave_leak sysret_ss_attrs
+bogomips	: 5988.91
+TLB size	: 2560 4K pages
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 48 bits physical, 48 bits virtual
+power management: ts ttp tm hwpstate eff_freq_ro [13] [14]
+
+processor	: 5
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 7 1700 Eight-Core Processor
+stepping	: 1
+microcode	: 0x8001105
+cpu MHz		: 3000.000
+cache size	: 512 KB
+physical id	: 0
+siblings	: 16
+core id		: 5
+cpu cores	: 8
+apicid		: 5
+initial apicid	: 5
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc extd_apicid aperfmperf eagerfpu pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_l2 mwaitx hw_pstate vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold
+bugs		: fxsave_leak sysret_ss_attrs
+bogomips	: 5988.91
+TLB size	: 2560 4K pages
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 48 bits physical, 48 bits virtual
+power management: ts ttp tm hwpstate eff_freq_ro [13] [14]
+
+processor	: 6
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 7 1700 Eight-Core Processor
+stepping	: 1
+microcode	: 0x8001105
+cpu MHz		: 3000.000
+cache size	: 512 KB
+physical id	: 0
+siblings	: 16
+core id		: 6
+cpu cores	: 8
+apicid		: 6
+initial apicid	: 6
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc extd_apicid aperfmperf eagerfpu pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_l2 mwaitx hw_pstate vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold
+bugs		: fxsave_leak sysret_ss_attrs
+bogomips	: 5988.91
+TLB size	: 2560 4K pages
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 48 bits physical, 48 bits virtual
+power management: ts ttp tm hwpstate eff_freq_ro [13] [14]
+
+processor	: 7
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 7 1700 Eight-Core Processor
+stepping	: 1
+microcode	: 0x8001105
+cpu MHz		: 2700.000
+cache size	: 512 KB
+physical id	: 0
+siblings	: 16
+core id		: 7
+cpu cores	: 8
+apicid		: 7
+initial apicid	: 7
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc extd_apicid aperfmperf eagerfpu pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_l2 mwaitx hw_pstate vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold
+bugs		: fxsave_leak sysret_ss_attrs
+bogomips	: 5988.91
+TLB size	: 2560 4K pages
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 48 bits physical, 48 bits virtual
+power management: ts ttp tm hwpstate eff_freq_ro [13] [14]
+
+processor	: 8
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 7 1700 Eight-Core Processor
+stepping	: 1
+microcode	: 0x8001105
+cpu MHz		: 1550.000
+cache size	: 512 KB
+physical id	: 0
+siblings	: 16
+core id		: 8
+cpu cores	: 8
+apicid		: 8
+initial apicid	: 8
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc extd_apicid aperfmperf eagerfpu pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_l2 mwaitx hw_pstate vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold
+bugs		: fxsave_leak sysret_ss_attrs
+bogomips	: 5988.91
+TLB size	: 2560 4K pages
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 48 bits physical, 48 bits virtual
+power management: ts ttp tm hwpstate eff_freq_ro [13] [14]
+
+processor	: 9
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 7 1700 Eight-Core Processor
+stepping	: 1
+microcode	: 0x8001105
+cpu MHz		: 1550.000
+cache size	: 512 KB
+physical id	: 0
+siblings	: 16
+core id		: 9
+cpu cores	: 8
+apicid		: 9
+initial apicid	: 9
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc extd_apicid aperfmperf eagerfpu pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_l2 mwaitx hw_pstate vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold
+bugs		: fxsave_leak sysret_ss_attrs
+bogomips	: 5988.91
+TLB size	: 2560 4K pages
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 48 bits physical, 48 bits virtual
+power management: ts ttp tm hwpstate eff_freq_ro [13] [14]
+
+processor	: 10
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 7 1700 Eight-Core Processor
+stepping	: 1
+microcode	: 0x8001105
+cpu MHz		: 1550.000
+cache size	: 512 KB
+physical id	: 0
+siblings	: 16
+core id		: 10
+cpu cores	: 8
+apicid		: 10
+initial apicid	: 10
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc extd_apicid aperfmperf eagerfpu pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_l2 mwaitx hw_pstate vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold
+bugs		: fxsave_leak sysret_ss_attrs
+bogomips	: 5988.91
+TLB size	: 2560 4K pages
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 48 bits physical, 48 bits virtual
+power management: ts ttp tm hwpstate eff_freq_ro [13] [14]
+
+processor	: 11
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 7 1700 Eight-Core Processor
+stepping	: 1
+microcode	: 0x8001105
+cpu MHz		: 1550.000
+cache size	: 512 KB
+physical id	: 0
+siblings	: 16
+core id		: 11
+cpu cores	: 8
+apicid		: 11
+initial apicid	: 11
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc extd_apicid aperfmperf eagerfpu pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_l2 mwaitx hw_pstate vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold
+bugs		: fxsave_leak sysret_ss_attrs
+bogomips	: 5988.91
+TLB size	: 2560 4K pages
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 48 bits physical, 48 bits virtual
+power management: ts ttp tm hwpstate eff_freq_ro [13] [14]
+
+processor	: 12
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 7 1700 Eight-Core Processor
+stepping	: 1
+microcode	: 0x8001105
+cpu MHz		: 3000.000
+cache size	: 512 KB
+physical id	: 0
+siblings	: 16
+core id		: 12
+cpu cores	: 8
+apicid		: 12
+initial apicid	: 12
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc extd_apicid aperfmperf eagerfpu pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_l2 mwaitx hw_pstate vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold
+bugs		: fxsave_leak sysret_ss_attrs
+bogomips	: 5988.91
+TLB size	: 2560 4K pages
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 48 bits physical, 48 bits virtual
+power management: ts ttp tm hwpstate eff_freq_ro [13] [14]
+
+processor	: 13
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 7 1700 Eight-Core Processor
+stepping	: 1
+microcode	: 0x8001105
+cpu MHz		: 3000.000
+cache size	: 512 KB
+physical id	: 0
+siblings	: 16
+core id		: 13
+cpu cores	: 8
+apicid		: 13
+initial apicid	: 13
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc extd_apicid aperfmperf eagerfpu pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_l2 mwaitx hw_pstate vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold
+bugs		: fxsave_leak sysret_ss_attrs
+bogomips	: 5988.91
+TLB size	: 2560 4K pages
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 48 bits physical, 48 bits virtual
+power management: ts ttp tm hwpstate eff_freq_ro [13] [14]
+
+processor	: 14
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 7 1700 Eight-Core Processor
+stepping	: 1
+microcode	: 0x8001105
+cpu MHz		: 1550.000
+cache size	: 512 KB
+physical id	: 0
+siblings	: 16
+core id		: 14
+cpu cores	: 8
+apicid		: 14
+initial apicid	: 14
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc extd_apicid aperfmperf eagerfpu pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_l2 mwaitx hw_pstate vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold
+bugs		: fxsave_leak sysret_ss_attrs
+bogomips	: 5988.91
+TLB size	: 2560 4K pages
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 48 bits physical, 48 bits virtual
+power management: ts ttp tm hwpstate eff_freq_ro [13] [14]
+
+processor	: 15
+vendor_id	: AuthenticAMD
+cpu family	: 23
+model		: 1
+model name	: AMD Ryzen 7 1700 Eight-Core Processor
+stepping	: 1
+microcode	: 0x8001105
+cpu MHz		: 1550.000
+cache size	: 512 KB
+physical id	: 0
+siblings	: 16
+core id		: 15
+cpu cores	: 8
+apicid		: 15
+initial apicid	: 15
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc extd_apicid aperfmperf eagerfpu pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_l2 mwaitx hw_pstate vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold
+bugs		: fxsave_leak sysret_ss_attrs
+bogomips	: 5988.91
+TLB size	: 2560 4K pages
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 48 bits physical, 48 bits virtual
+power management: ts ttp tm hwpstate eff_freq_ro [13] [14]
+
+
+
+Memory: 4k page, physical 32958268k(221932k free), swap 33501180k(0k free)
+
+vm_info: OpenJDK 64-Bit Server VM (25.131-b11) for linux-amd64 JRE (1.8.0_131-8u131-b11-2ubuntu1.16.04.3-b11), built on Jul 28 2017 01:23:32 by "buildd" with gcc 5.4.0 20160609
+
+time: Fri Aug 25 17:27:53 2017
+elapsed time: 0 seconds (0d 0h 0m 0s)
+
