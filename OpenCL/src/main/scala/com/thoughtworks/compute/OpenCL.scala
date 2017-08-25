@@ -356,7 +356,7 @@ object OpenCL {
         )
       } catch {
         case NonFatal(e) =>
-          JNINativeInterface.DeleteGlobalRef(userData)
+          //JNINativeInterface.DeleteGlobalRef(userData)
           throw e
       }
     }
