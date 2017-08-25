@@ -107,18 +107,18 @@ object OpenCLBenchmark {
 class OpenCLBenchmark {
   import OpenCLBenchmark._
 
-  @Param(Array("32", "8", "128"))
-  var width: Int = 32
-  @Param(Array("32", "8", "128"))
-  var height: Int = 32
+  @Param(Array("64", "32", "8"))
+  var width: Int = 128
+  @Param(Array("64", "32", "8"))
+  var height: Int = 64
 
   @Param(Array("128", "8", "32"))
   var batchSize: Int = 128
 
-  @Param(Array("32", "64"))
-  var numberOfConcurrentLayers: Int = 32
+  @Param(Array("1", "32", "8"))
+  var numberOfConcurrentLayers: Int = 1
 
-  @Param(Array("4096", "256"))
+  @Param(Array("1024", "256"))
   var totalLayers: Int = 4096
 
   @Benchmark
@@ -144,17 +144,30 @@ class OpenCLBenchmark {
         val sliceSize = width * height * batchSize
 
         for {
-          inputDeviceBuffer <- opencl.allocateBuffer[Float](sliceSize * totalLayers)
+//          inputDeviceBuffer <- opencl.allocateBuffer[Float](sliceSize * totalLayers)
+//          inputSlices <- (0 until totalLayers).toStream.traverse { i =>
+//            inputDeviceBuffer.slice(sliceSize * i, sliceSize)
+//          }
+//          outputDeviceBuffer <- opencl.allocateBuffer[Float](sliceSize * totalLayers)
+//          outputSlices <- (0 until totalLayers).toStream.traverse { i =>
+//            outputDeviceBuffer.slice(sliceSize * i, sliceSize)
+//          }
+//          weightDeviceBuffer <- opencl.allocateBuffer[Float](ConvolutionalKernelSize * totalLayers)
+//          weightSlices <- (0 until totalLayers).toStream.traverse { i =>
+//            weightDeviceBuffer.slice(ConvolutionalKernelSize * i, ConvolutionalKernelSize)
+//          }
+
+          //          inputDeviceBuffer <- opencl.allocateBuffer[Float](sliceSize * totalLayers)
           inputSlices <- (0 until totalLayers).toStream.traverse { i =>
-            inputDeviceBuffer.slice(sliceSize * i, sliceSize)
+            opencl.allocateBuffer[Float](sliceSize)
           }
-          outputDeviceBuffer <- opencl.allocateBuffer[Float](sliceSize * totalLayers)
+          //          outputDeviceBuffer <- opencl.allocateBuffer[Float](sliceSize * totalLayers)
           outputSlices <- (0 until totalLayers).toStream.traverse { i =>
-            outputDeviceBuffer.slice(sliceSize * i, sliceSize)
+            opencl.allocateBuffer[Float](sliceSize)
           }
-          weightDeviceBuffer <- opencl.allocateBuffer[Float](ConvolutionalKernelSize * totalLayers)
+          //          weightDeviceBuffer <- opencl.allocateBuffer[Float](ConvolutionalKernelSize * totalLayers)
           weightSlices <- (0 until totalLayers).toStream.traverse { i =>
-            weightDeviceBuffer.slice(ConvolutionalKernelSize * i, ConvolutionalKernelSize)
+            opencl.allocateBuffer[Float](ConvolutionalKernelSize)
           }
 
           unit <- Do.garbageCollected {
