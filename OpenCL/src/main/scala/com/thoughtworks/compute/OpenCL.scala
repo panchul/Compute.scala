@@ -71,6 +71,11 @@ object OpenCL {
     }
   })
   object Exceptions {
+    final class MisalignedSubBufferOffset extends IllegalArgumentException
+
+    final class ExecStatusErrorForEventsInWaitList extends IllegalArgumentException
+
+    final class InvalidProperty extends IllegalArgumentException
 
     final class PlatformNotFoundKhr extends IllegalStateException
 
@@ -165,52 +170,57 @@ object OpenCL {
     final class UnknownErrorCode(errorCode: Int) extends IllegalStateException(s"Unknown error code: $errorCode")
 
     def fromErrorCode(errorCode: Int): Exception = errorCode match {
-      case CL_PLATFORM_NOT_FOUND_KHR          => new Exceptions.PlatformNotFoundKhr
-      case CL_DEVICE_NOT_FOUND                => new Exceptions.DeviceNotFound
-      case CL_DEVICE_NOT_AVAILABLE            => new Exceptions.DeviceNotAvailable
-      case CL_COMPILER_NOT_AVAILABLE          => new Exceptions.CompilerNotAvailable
-      case CL_MEM_OBJECT_ALLOCATION_FAILURE   => new Exceptions.MemObjectAllocationFailure
-      case CL_OUT_OF_RESOURCES                => new Exceptions.OutOfResources
-      case CL_OUT_OF_HOST_MEMORY              => new Exceptions.OutOfHostMemory
-      case CL_PROFILING_INFO_NOT_AVAILABLE    => new Exceptions.ProfilingInfoNotAvailable
-      case CL_MEM_COPY_OVERLAP                => new Exceptions.MemCopyOverlap
-      case CL_IMAGE_FORMAT_MISMATCH           => new Exceptions.ImageFormatMismatch
-      case CL_IMAGE_FORMAT_NOT_SUPPORTED      => new Exceptions.ImageFormatNotSupported
-      case CL_BUILD_PROGRAM_FAILURE           => new Exceptions.BuildProgramFailure
-      case CL_MAP_FAILURE                     => new Exceptions.MapFailure
-      case CL_INVALID_VALUE                   => new Exceptions.InvalidValue
-      case CL_INVALID_DEVICE_TYPE             => new Exceptions.InvalidDeviceType
-      case CL_INVALID_PLATFORM                => new Exceptions.InvalidPlatform
-      case CL_INVALID_DEVICE                  => new Exceptions.InvalidDevice
-      case CL_INVALID_CONTEXT                 => new Exceptions.InvalidContext
-      case CL_INVALID_QUEUE_PROPERTIES        => new Exceptions.InvalidQueueProperties
-      case CL_INVALID_COMMAND_QUEUE           => new Exceptions.InvalidCommandQueue
-      case CL_INVALID_HOST_PTR                => new Exceptions.InvalidHostPtr
-      case CL_INVALID_MEM_OBJECT              => new Exceptions.InvalidMemObject
-      case CL_INVALID_IMAGE_FORMAT_DESCRIPTOR => new Exceptions.InvalidImageFormatDescriptor
-      case CL_INVALID_IMAGE_SIZE              => new Exceptions.InvalidImageSize
-      case CL_INVALID_SAMPLER                 => new Exceptions.InvalidSampler
-      case CL_INVALID_BINARY                  => new Exceptions.InvalidBinary
-      case CL_INVALID_BUILD_OPTIONS           => new Exceptions.InvalidBuildOptions
-      case CL_INVALID_PROGRAM                 => new Exceptions.InvalidProgram
-      case CL_INVALID_PROGRAM_EXECUTABLE      => new Exceptions.InvalidProgramExecutable
-      case CL_INVALID_KERNEL_NAME             => new Exceptions.InvalidKernelName
-      case CL_INVALID_KERNEL_DEFINITION       => new Exceptions.InvalidKernelDefinition
-      case CL_INVALID_KERNEL                  => new Exceptions.InvalidKernel
-      case CL_INVALID_ARG_INDEX               => new Exceptions.InvalidArgIndex
-      case CL_INVALID_ARG_VALUE               => new Exceptions.InvalidArgValue
-      case CL_INVALID_ARG_SIZE                => new Exceptions.InvalidArgSize
-      case CL_INVALID_KERNEL_ARGS             => new Exceptions.InvalidKernelArgs
-      case CL_INVALID_WORK_DIMENSION          => new Exceptions.InvalidWorkDimension
-      case CL_INVALID_WORK_GROUP_SIZE         => new Exceptions.InvalidWorkGroupSize
-      case CL_INVALID_WORK_ITEM_SIZE          => new Exceptions.InvalidWorkItemSize
-      case CL_INVALID_GLOBAL_OFFSET           => new Exceptions.InvalidGlobalOffset
-      case CL_INVALID_EVENT_WAIT_LIST         => new Exceptions.InvalidEventWaitList
-      case CL_INVALID_EVENT                   => new Exceptions.InvalidEvent
-      case CL_INVALID_OPERATION               => new Exceptions.InvalidOperation
-      case CL_INVALID_BUFFER_SIZE             => new Exceptions.InvalidBufferSize
-      case CL_INVALID_GLOBAL_WORK_SIZE        => new Exceptions.InvalidGlobalWorkSize
-      case _                                  => new Exceptions.UnknownErrorCode(errorCode)
+      case CL_PLATFORM_NOT_FOUND_KHR                    => new Exceptions.PlatformNotFoundKhr
+      case CL_DEVICE_NOT_FOUND                          => new Exceptions.DeviceNotFound
+      case CL_DEVICE_NOT_AVAILABLE                      => new Exceptions.DeviceNotAvailable
+      case CL_COMPILER_NOT_AVAILABLE                    => new Exceptions.CompilerNotAvailable
+      case CL_MEM_OBJECT_ALLOCATION_FAILURE             => new Exceptions.MemObjectAllocationFailure
+      case CL_OUT_OF_RESOURCES                          => new Exceptions.OutOfResources
+      case CL_OUT_OF_HOST_MEMORY                        => new Exceptions.OutOfHostMemory
+      case CL_PROFILING_INFO_NOT_AVAILABLE              => new Exceptions.ProfilingInfoNotAvailable
+      case CL_MEM_COPY_OVERLAP                          => new Exceptions.MemCopyOverlap
+      case CL_IMAGE_FORMAT_MISMATCH                     => new Exceptions.ImageFormatMismatch
+      case CL_IMAGE_FORMAT_NOT_SUPPORTED                => new Exceptions.ImageFormatNotSupported
+      case CL_BUILD_PROGRAM_FAILURE                     => new Exceptions.BuildProgramFailure
+      case CL_MAP_FAILURE                               => new Exceptions.MapFailure
+      case CL_INVALID_VALUE                             => new Exceptions.InvalidValue
+      case CL_INVALID_DEVICE_TYPE                       => new Exceptions.InvalidDeviceType
+      case CL_INVALID_PLATFORM                          => new Exceptions.InvalidPlatform
+      case CL_INVALID_DEVICE                            => new Exceptions.InvalidDevice
+      case CL_INVALID_CONTEXT                           => new Exceptions.InvalidContext
+      case CL_INVALID_QUEUE_PROPERTIES                  => new Exceptions.InvalidQueueProperties
+      case CL_INVALID_COMMAND_QUEUE                     => new Exceptions.InvalidCommandQueue
+      case CL_INVALID_HOST_PTR                          => new Exceptions.InvalidHostPtr
+      case CL_INVALID_MEM_OBJECT                        => new Exceptions.InvalidMemObject
+      case CL_INVALID_IMAGE_FORMAT_DESCRIPTOR           => new Exceptions.InvalidImageFormatDescriptor
+      case CL_INVALID_IMAGE_SIZE                        => new Exceptions.InvalidImageSize
+      case CL_INVALID_SAMPLER                           => new Exceptions.InvalidSampler
+      case CL_INVALID_BINARY                            => new Exceptions.InvalidBinary
+      case CL_INVALID_BUILD_OPTIONS                     => new Exceptions.InvalidBuildOptions
+      case CL_INVALID_PROGRAM                           => new Exceptions.InvalidProgram
+      case CL_INVALID_PROGRAM_EXECUTABLE                => new Exceptions.InvalidProgramExecutable
+      case CL_INVALID_KERNEL_NAME                       => new Exceptions.InvalidKernelName
+      case CL_INVALID_KERNEL_DEFINITION                 => new Exceptions.InvalidKernelDefinition
+      case CL_INVALID_KERNEL                            => new Exceptions.InvalidKernel
+      case CL_INVALID_ARG_INDEX                         => new Exceptions.InvalidArgIndex
+      case CL_INVALID_ARG_VALUE                         => new Exceptions.InvalidArgValue
+      case CL_INVALID_ARG_SIZE                          => new Exceptions.InvalidArgSize
+      case CL_INVALID_KERNEL_ARGS                       => new Exceptions.InvalidKernelArgs
+      case CL_INVALID_WORK_DIMENSION                    => new Exceptions.InvalidWorkDimension
+      case CL_INVALID_WORK_GROUP_SIZE                   => new Exceptions.InvalidWorkGroupSize
+      case CL_INVALID_WORK_ITEM_SIZE                    => new Exceptions.InvalidWorkItemSize
+      case CL_INVALID_GLOBAL_OFFSET                     => new Exceptions.InvalidGlobalOffset
+      case CL_INVALID_EVENT_WAIT_LIST                   => new Exceptions.InvalidEventWaitList
+      case CL_INVALID_EVENT                             => new Exceptions.InvalidEvent
+      case CL_INVALID_OPERATION                         => new Exceptions.InvalidOperation
+      case CL_INVALID_BUFFER_SIZE                       => new Exceptions.InvalidBufferSize
+      case CL_INVALID_GLOBAL_WORK_SIZE                  => new Exceptions.InvalidGlobalWorkSize
+      case CL_MISALIGNED_SUB_BUFFER_OFFSET              => new Exceptions.MisalignedSubBufferOffset
+      case CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST => new Exceptions.ExecStatusErrorForEventsInWaitList
+      case CL_INVALID_PROPERTY                          => new Exceptions.InvalidProperty
+
+      case _ => new Exceptions.UnknownErrorCode(errorCode)
+
     }
 
   }
