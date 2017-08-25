@@ -223,7 +223,7 @@ object OpenCL {
   }
 
   trait UseFirstPlatform {
-    @transient @volatile
+    @transient
     protected lazy val platformId: Long = {
       val stack = stackPush()
       try {
@@ -259,7 +259,7 @@ object OpenCL {
 
     protected val platformId: Long
 
-    @transient @volatile
+    @transient
     protected lazy val deviceIds: Seq[Long] = {
       deviceIdsByType(platformId, CL_DEVICE_TYPE_ALL)
     }
@@ -285,14 +285,15 @@ object OpenCL {
         for (i <- 0 until numberOfCommandQueuesForDevice(deviceId, capabilities)) yield {
           val supportedProperties = deviceLongInfo(deviceId, CL_DEVICE_QUEUE_PROPERTIES)
           val properties = Map(
-            CL_QUEUE_PROPERTIES -> (supportedProperties | CL_QUEUE_ON_DEVICE)
+            CL_QUEUE_PROPERTIES -> (supportedProperties & CL_QUEUE_ON_DEVICE)
           )
           createCommandQueue(deviceId, properties)
         }
       }
     }
 
-    val Resource(acquireCommandQueue, shutdownCommandQueues) = AsynchronousPool.preloaded(commandQueues)
+    @transient
+    lazy val Resource(acquireCommandQueue, shutdownCommandQueues) = AsynchronousPool.preloaded(commandQueues)
 
     private def deviceLongInfo(deviceId: Long, paramName: Int): Long = {
       val buffer = Array[Long](0L)
@@ -314,7 +315,7 @@ object OpenCL {
     private[OpenCL] def delay[Owner <: OpenCL with Singleton](handle: => Long): Do[Event[Owner]] = {
       val bufferContinuation = UnitContinuation.delay {
         Resource(value = Success(Event[Owner](handle)), release = UnitContinuation.delay {
-          checkErrorCode(clReleaseMemObject(handle))
+          checkErrorCode(clReleaseEvent(handle))
         })
       }
       Do(TryT(ResourceT(bufferContinuation)))
@@ -521,7 +522,7 @@ object OpenCL {
           } finally {
             stack.close()
           }
-          checkErrorCode(clFlush(handle.toLong))
+          checkErrorCode(clFlush(commandQueue))
           outputEvent
         }
       }
@@ -529,7 +530,7 @@ object OpenCL {
 
     override def monadicClose: UnitContinuation[Unit] = {
       UnitContinuation.delay {
-        checkErrorCode(clReleaseKernel(handle.toLong))
+        checkErrorCode(clReleaseKernel(handle))
       }
     }
   }
@@ -555,14 +556,10 @@ object OpenCL {
       try {
         val kernelBuffer = stack.mallocPointer(1)
         checkErrorCode(clCreateKernelsInProgram(handle, kernelBuffer, null: IntBuffer))
-        Kernel(kernelBuffer.get(1))
+        Kernel(kernelBuffer.get(0))
       } finally {
         stack.close()
       }
-    }
-
-    private def startBuild(deviceIds: PointerBuffer, options: CharSequence) = {
-      checkErrorCode(clBuildProgram(handle, deviceIds, options, null, NULL))
     }
 
     def build(deviceIds: Seq[Long], options: CharSequence = ""): Unit = {
@@ -667,7 +664,7 @@ trait OpenCL extends MonadicCloseable[UnitContinuation] with ImplicitsSingleton 
     } else {
       val cl10Properties = properties.getOrElse(CL_QUEUE_PROPERTIES, 0L)
       val a = Array(0)
-      val commandQueue = clCreateCommandQueue(platformId, deviceId, cl10Properties, a)
+      val commandQueue = clCreateCommandQueue(context, deviceId, cl10Properties, a)
       checkErrorCode(a(0))
       commandQueue
     }
@@ -680,7 +677,7 @@ trait OpenCL extends MonadicCloseable[UnitContinuation] with ImplicitsSingleton 
     }
   }
 
-  @transient @volatile
+  @transient
   protected lazy val context: Long = {
     val stack = stackPush()
     try {

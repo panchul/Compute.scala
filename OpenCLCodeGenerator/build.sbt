@@ -22,6 +22,6 @@ libraryDependencies += "org.lwjgl" % "lwjgl-opencl" % "3.1.2" % Test
 
 libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.2" % Test
 
-libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.2" % Test /* Runtime */ classifier lwjglNatives
+libraryDependencies += "org.lwjgl" % "lwjgl" % "3.1.2" % Runtime classifier lwjglNatives
 
 fork := true

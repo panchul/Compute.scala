@@ -16,8 +16,11 @@ import org.lwjgl.system.MemoryUtil._
 import org.openjdk.jmh.annotations.{Benchmark, Param, Scope, State}
 import shapeless.Witness
 
+import scalaz.Semigroup
 import scalaz.std.stream._
 import scalaz.syntax.all._
+import scalaz.syntax.tag._
+import scalaz.Tags.Parallel
 
 /**
   * @author 杨博 (Yang Bo)
@@ -27,25 +30,30 @@ object OpenCLBenchmark {
   trait TestKernels extends OpenCL with OpenCL.CommandQueuePool {
 
     @transient
-    private lazy val compiledProgram: Program = {
+    private[OpenCLBenchmark] lazy val compiledProgram: Program = {
+
       val program = createProgramWithSource(fastraw"""
-      float sample(float* input, ptrdiff_t x, ptrdiff_t y, ptrdiff_t width, ptrdiff_t height) {
+      float sample(global float* restrict input, size_t image_index, ptrdiff_t x, ptrdiff_t y, ptrdiff_t width, ptrdiff_t height) {
         if (x >= 0 && x < width && y >= 0 && y < height) {
-          return input[y * width + x];
+          return input[image_index * width * height, y * width + x];
         } else {
           return 0.0f;
         }
       }
 
-      kernel void benchmark(float* input, float* output, float* weight) {
-        size_t x = get_global_id(0);
-        size_t width = get_global_size(0);
-        size_t y = get_global_id(1);
-        size_t height = get_global_size(1);
+      kernel void benchmark(global const float* restrict input, global float* restrict output, global float* restrict weight) {
+        size_t image_index = get_global_id(0);
+        size_t batch_size = get_global_size(0);
+        size_t x = get_global_id(1);
+        size_t width = get_global_size(1);implicit def keepLastException = new Semigroup[Throwable] {
+          override def append(f1: Throwable, f2: => Throwable) = f2
+        }
+        size_t y = get_global_id(2);
+        size_t height = get_global_size(2);
         output[y * width + x] = ${(for {
         offsetX <- ConvolutionalKernelX
         offsetY <- ConvolutionalKernelY
-      } yield fast"sample(input, x + ($offsetX), y + ($offsetY), width, height)").mkFastring(" + ")};
+      } yield fast"sample(input, image_index, x + ($offsetX), y + ($offsetY), width, height)").mkFastring(" + ")};
       }
       """)
 
@@ -61,6 +69,7 @@ object OpenCLBenchmark {
     def test(input: DeviceBuffer[Float],
              output: DeviceBuffer[Float],
              weight: DeviceBuffer[Float],
+             batchSize: Int,
              width: Int,
              height: Int): Future[Unit] = {
       Do.monadicCloseable(compiledProgram.firstKernel)
@@ -69,7 +78,7 @@ object OpenCLBenchmark {
           kernel(1) = output
           kernel(2) = weight
           val self: this.type = this
-          kernel.enqueue(width, height)(Witness(self)).flatMap { event =>
+          kernel.enqueue(batchSize, width, height)(Witness(self)).flatMap { event =>
             Do.garbageCollected(event.waitForComplete())
           }
         }
@@ -88,8 +97,10 @@ object OpenCLBenchmark {
         f"${buffer.get(i)}%02X"
       }
       Console.err.println(hexText.mkString(errorInfo, " ", ""))
+      Console.err.flush()
     } else {
       Console.err.println(errorInfo)
+      Console.err.flush()
     }
   }
 }
@@ -99,21 +110,21 @@ class OpenCLBenchmark {
   import OpenCLBenchmark._
 
   @Param(Array("8", "32"))
-  var width: Int = _
+  var width: Int = 8
   @Param(Array("8", "32"))
-  var height: Int = _
+  var height: Int = 8
 
   @Param(Array("8", "128"))
-  var batchSize: Int = _
+  var batchSize: Int = 8
 
   @Param(Array("32"))
-  var numberOfConcurrentLayers: Int = _
+  var numberOfConcurrentLayers: Int = 32
 
   @Param(Array("256"))
-  var totalLayers: Int = _
+  var totalLayers: Int = 256
 
   @Benchmark
-  def test(): Unit = {
+  def testTheNet(): Unit = {
 
     val numberOfCommandQueuesForDevice = { (deviceId: Long, capabilities: CLCapabilities) =>
       numberOfConcurrentLayers
@@ -145,21 +156,28 @@ class OpenCLBenchmark {
           }
           weightDeviceBuffer <- opencl.allocateBuffer[Float](ConvolutionalKernelSize * totalLayers)
           weightSlices <- (0 until totalLayers).toStream.traverse { i =>
-            weightDeviceBuffer.slice(sliceSize * i, sliceSize)
+            weightDeviceBuffer.slice(ConvolutionalKernelSize * i, ConvolutionalKernelSize)
           }
 
-          _ <- Do.garbageCollected((0 until totalLayers).toStream.traverse { layerIndex =>
-            opencl.test(
-              inputSlices(layerIndex),
-              outputSlices(layerIndex),
-              weightSlices(layerIndex),
-              width,
-              height
-            )
-          })
-        } yield {
-          ()
-        }
+          unit <- Do.garbageCollected {
+            implicit def keepLastException = new Semigroup[Throwable] {
+              override def append(f1: Throwable, f2: => Throwable) = f2
+            }
+            (0 until totalLayers).toStream
+              .traverse_[ParallelFuture] { layerIndex =>
+                Parallel(
+                  opencl.test(
+                    inputSlices(layerIndex),
+                    outputSlices(layerIndex),
+                    weightSlices(layerIndex),
+                    batchSize,
+                    width,
+                    height
+                  ))
+              }
+              .unwrap
+          }
+        } yield unit
 
       }
       .run
