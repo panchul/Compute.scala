@@ -1,6 +1,7 @@
 package com.thoughtworks.compute
 
 import java.nio.ByteBuffer
+import java.util.concurrent.ForkJoinPool
 
 import com.dongxiguo.fastring.Fastring
 import com.dongxiguo.fastring.Fastring.Implicits._
@@ -16,6 +17,7 @@ import org.lwjgl.system.MemoryUtil._
 import org.openjdk.jmh.annotations.{Benchmark, Param, Scope, State}
 import shapeless.Witness
 
+import scala.concurrent.ExecutionContext
 import scalaz.Semigroup
 import scalaz.std.stream._
 import scalaz.syntax.all._
@@ -26,6 +28,7 @@ import scalaz.Tags.Parallel
   * @author 杨博 (Yang Bo)
   */
 object OpenCLBenchmark {
+  implicit val executionContext = ExecutionContext.fromExecutorService(new ForkJoinPool(50))
 
   trait TestKernels extends OpenCL with OpenCL.CommandQueuePool {
 
@@ -136,6 +139,7 @@ class OpenCLBenchmark {
         )
     }
 
+
     doOpenCL
       .flatMap { opencl2 =>
         val opencl = opencl2 // Workaround for https://github.com/milessabin/shapeless/issues/749
@@ -177,14 +181,15 @@ class OpenCLBenchmark {
             (0 until totalLayers).toStream
               .traverse_[ParallelFuture] { layerIndex =>
                 Parallel(
-                  opencl.test(
-                    inputSlices(layerIndex),
-                    outputSlices(layerIndex),
-                    weightSlices(layerIndex),
-                    batchSize,
-                    width,
-                    height
-                  ))
+                  Future.execute(()) >>
+                    opencl.test(
+                      inputSlices(layerIndex),
+                      outputSlices(layerIndex),
+                      weightSlices(layerIndex),
+                      batchSize,
+                      width,
+                      height
+                    ))
               }
               .unwrap
           }
@@ -193,6 +198,7 @@ class OpenCLBenchmark {
       }
       .run
       .blockingAwait
+
   }
 
 }
