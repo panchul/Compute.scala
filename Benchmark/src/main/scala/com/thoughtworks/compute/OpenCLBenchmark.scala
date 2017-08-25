@@ -115,7 +115,7 @@ class OpenCLBenchmark {
   @Param(Array("128", "8", "32"))
   var batchSize: Int = 128
 
-  @Param(Array("32"), "64")
+  @Param(Array("32", "64"))
   var numberOfConcurrentLayers: Int = 32
 
   @Param(Array("4096", "256"))
