@@ -110,18 +110,18 @@ object OpenCLBenchmark {
 class OpenCLBenchmark {
   import OpenCLBenchmark._
 
-  @Param(Array("32", "64", "8"))
+  @Param(Array("1", "32", "64", "8"))
   var width: Int = 32
-  @Param(Array("32", "64", "8"))
+  @Param(Array("1", "32", "64", "8"))
   var height: Int = 32
 
-  @Param(Array("8", "128", "32"))
+  @Param(Array("1", "8", "128", "32"))
   var batchSize: Int = 128
 
-  @Param(Array("32", "8"))
+  @Param(Array("1", "32", "8"))
   var numberOfConcurrentLayers: Int = 1
 
-  @Param(Array("1024", "256"))
+  @Param(Array("1", "1024", "256"))
   var totalLayers: Int = 1024
 
   @Benchmark
@@ -138,7 +138,6 @@ class OpenCLBenchmark {
           numberOfCommandQueuesForDevice = numberOfCommandQueuesForDevice
         )
     }
-
 
     doOpenCL
       .flatMap { opencl2 =>
