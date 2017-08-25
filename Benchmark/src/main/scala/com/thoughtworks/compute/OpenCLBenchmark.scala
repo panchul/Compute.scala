@@ -107,19 +107,19 @@ object OpenCLBenchmark {
 class OpenCLBenchmark {
   import OpenCLBenchmark._
 
-  @Param(Array("8", "32"))
-  var width: Int = 8
-  @Param(Array("8", "32"))
-  var height: Int = 8
+  @Param(Array("32", "8", "128"))
+  var width: Int = 32
+  @Param(Array("32", "8", "128"))
+  var height: Int = 32
 
-  @Param(Array("8", "128"))
-  var batchSize: Int = 8
+  @Param(Array("128", "8", "32"))
+  var batchSize: Int = 128
 
-  @Param(Array("32"))
+  @Param(Array("32"), "64")
   var numberOfConcurrentLayers: Int = 32
 
-  @Param(Array("256"))
-  var totalLayers: Int = 256
+  @Param(Array("4096", "256"))
+  var totalLayers: Int = 4096
 
   @Benchmark
   def testTheNet(): Unit = {
