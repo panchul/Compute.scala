@@ -34,7 +34,7 @@ fork := true
 
 scalacOptions += "-Ypartial-unification"
 
-scalacOptions += "-Yliteral-types"
+//scalacOptions += "-Yliteral-types"
 
 libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1" % Test
 
